@@ -45,3 +45,10 @@ import gym
 env = gym.make('Sprites-v1')
 ```
 This will create an image-based environment with one distractor. Change the name to get different environments.
+
+
+
+## Reference
+
+[Task-Induced Representation Learning](https://arxiv.org/abs/2204.11827)
+
