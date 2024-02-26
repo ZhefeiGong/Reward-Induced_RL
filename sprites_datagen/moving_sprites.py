@@ -6,7 +6,6 @@ from general_utils import AttrDict
 from sprites_datagen.utils.template_blender import TemplateBlender
 from sprites_datagen.utils.trajectory import ConstantSpeedTrajectory
 
-
 class MovingSpriteDataset(Dataset):
     """Dataset of multiple sprites bouncing in frame, contains different reward annotations."""
     def __init__(self, spec):
@@ -24,7 +23,6 @@ class MovingSpriteDataset(Dataset):
 
         return data_dict
 
-
 class MovingSpritesGenerator:
     """Base moving sprites data generator class."""
     SHAPES = ['rectangle', 'circle', 'tri_right', 'tri_bottom', 'tri_left', 'tri_top']
@@ -39,14 +37,14 @@ class MovingSpritesGenerator:
         output = AttrDict()
 
         # sample coordinate trajectories [T, n_shapes, state_dim]
-        output.states = self._traj_gen.create(self._spec.max_seq_len, self._spec.shapes_per_traj)
+        output.states = self._traj_gen.create(self._spec.max_seq_len, self._spec.shapes_per_traj) # Generate Trajectories
 
         # sample shapes for trajectory
-        output.shape_idxs = self._sample_shapes()
-        shapes = np.asarray(self.SHAPES)[output.shape_idxs]
+        output.shape_idxs = self._sample_shapes()              # [ AGENT(1) | TARGET(0) | Distractors(...)]
+        shapes = np.asarray(self.SHAPES)[output.shape_idxs]    # the shapes'names accroding to the indexes
 
         # render images for trajectories + shapes
-        output.images = self._render(output.states, shapes)
+        output.images = self._render(output.states, shapes)    # ['Circle' | 'rectangle' | Distractors(...)]
 
         # compute rewards for trajectories
         output.rewards = self._reward(output.states, shapes)
@@ -107,8 +105,13 @@ class DistractorTemplateMovingSpritesGenerator(TemplateMovingSpritesGenerator):
     def _sample_shapes(self):
         """Retrieves shapes for agent and target, samples randomly from other shapes for distractors."""
         assert self._spec.shapes_per_traj >= 2
+
+        # agent + target
         shape_idxs = np.asarray([self.SHAPES.index(self.AGENT), self.SHAPES.index(self.TARGET)])
+        # 
         distractor_idxs = np.setdiff1d(np.arange(len(self.SHAPES)), shape_idxs)
+
+        # distractors
         if self._spec.shapes_per_traj > 2:
             shape_idxs = np.concatenate((shape_idxs,
                                          np.random.choice(distractor_idxs, size=self._spec.shapes_per_traj - 2)))
@@ -119,17 +122,20 @@ if __name__ == '__main__':
     import cv2
     from general_utils import make_image_seq_strip
     from sprites_datagen.rewards import ZeroReward
+
     spec = AttrDict(
-        resolution=128,
-        max_seq_len=30,
-        max_speed=0.05,      # total image range [0, 1]
-        obj_size=0.2,       # size of objects, full images is 1.0
-        shapes_per_traj=4,      # number of shapes per trajectory
+        resolution=128,             # the quality of an image
+        max_seq_len=30,             # the length of a sequence
+        max_speed=0.05,             # total image range [0, 1]
+        obj_size=0.2,               # size of objects, full images is 1.0
+        shapes_per_traj=4,          # number of shapes per trajectory
         rewards=[ZeroReward],
     )
+    
     gen = DistractorTemplateMovingSpritesGenerator(spec)
     traj = gen.gen_trajectory()
     img = make_image_seq_strip([traj.images[None, :, None].repeat(3, axis=2).astype(np.float32)], sep_val=255.0).astype(np.uint8)
+    
     cv2.imwrite("test.png", img[0].transpose(1, 2, 0))
 
 

@@ -22,9 +22,9 @@ class ZeroReward(Reward):
 class VertPosReward(Reward):
     """Returns reward proportional to the vertical position of the first object."""
     NAME = 'vertical_position'
-
+    
     def __call__(self, trajectories, shapes):
-        return trajectories[:, 0, 1]
+        return trajectories[:, 0, 1] # !!! ERROR !!!
 
 
 class HorPosReward(Reward):
@@ -32,7 +32,7 @@ class HorPosReward(Reward):
     NAME = 'horizontal_position'
 
     def __call__(self, trajectories, shapes):
-        return trajectories[:, 0, 0]
+        return trajectories[:, 0, 0] # !!! ERROR !!!
 
 
 class AgentXReward(Reward):

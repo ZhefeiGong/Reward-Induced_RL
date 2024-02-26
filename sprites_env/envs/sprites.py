@@ -13,7 +13,7 @@ class SpritesEnv(gym.Env):
     def __init__(self, follow=True, **kwarg):
         self.shapes = None
 
-        self.n_distractors = kwarg['n_distractors'] if kwarg else 1
+        self.n_distractors = kwarg['n_distractors'] if kwarg else 1 # only one if not chose kwarg
         self.n_dim = self._n_dim = 2
         self._n_state = 2 * self.n_dim
 
@@ -207,16 +207,19 @@ class SpritesRepelStateEnv(SpritesStateEnv):
 
 
 if __name__  == '__main__':
+
     data_spec = AttrDict(
         resolution=64,
         max_ep_len=40,
         max_speed=0.05,      # total image range [0, 1]
-        obj_size=0.2,       # size of objects, full images is 1.0
+        obj_size=0.2,        # size of objects, full images is 1.0
         follow=True,
     )
-    env = SpritesEnv()
+    env = SpritesEnv() # kwarg['n_distractors'] choose the number of distractors (if not it's one)
     env.set_config(data_spec)
+
     obs = env.reset()
     cv2.imwrite("test_rl.png", 255 * np.expand_dims(obs, -1))
+    
     obs, reward, done, info = env.step([0, 0])
     cv2.imwrite("test_rl_1.png", 255 * np.expand_dims(obs, -1))

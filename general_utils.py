@@ -2,6 +2,8 @@ import numpy as np
 import torch
 
 
+#@func   : 
+#@noteby : zhefei gong
 class AttrDict(dict):
     __setattr__ = dict.__setitem__
 
@@ -12,7 +14,7 @@ class AttrDict(dict):
             return self.__getitem__(attr)
         except KeyError:
             raise AttributeError("Attribute %r not found" % attr)
-
+    
     def __getstate__(self):
         return self
 
@@ -20,6 +22,8 @@ class AttrDict(dict):
         self = d
 
 
+#@func   : 
+#@noteby : zhefei gong
 def get_padding(seq, replace_dim, size, val=0.0):
     """Returns padding tensor of same shape as seq, but with the target dimension replaced to 'size'.
        All values in returned array are set to 'val'."""
@@ -30,6 +34,8 @@ def get_padding(seq, replace_dim, size, val=0.0):
         return val * np.ones(seq_shape[:replace_dim] + (size,) + seq_shape[replace_dim + 1:])
 
 
+#@func   : 
+#@noteby : zhefei gong
 def stack_with_separator(tensors, dim, sep_width=2, sep_val=0.0):
     """Stacks list of tensors along given dimension, adds separator, brings to range [0...1]."""
     tensors = [(t + 1) / 2 if t.min() < 0.0 else t for t in tensors]
@@ -44,10 +50,14 @@ def stack_with_separator(tensors, dim, sep_width=2, sep_val=0.0):
     return stack_tensors[0]
 
 
+#@func   : 
+#@noteby : zhefei gong
 def make_image_seq_strip(imgs, n_logged_samples=5, sep_val=0.0):
     """Creates image strip where each row contains full rollout of sequence [each element of list makes one row]."""
     plot_imgs = stack_with_separator(imgs, dim=3, sep_val=sep_val)[:n_logged_samples]
     return stack_with_separator([t[:, 0] for t in np.split(plot_imgs, int(plot_imgs.shape[1] / 1), 1)],
                                 dim=3, sep_val=sep_val)
+
+
 
 

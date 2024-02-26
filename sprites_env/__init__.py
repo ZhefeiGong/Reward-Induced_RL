@@ -1,6 +1,9 @@
 from gym.envs.registration import register
 
+####################################
 #### Image-based follower envs. ####
+####################################
+
 register(
     id='Sprites-v0',
     entry_point='sprites_env.envs.sprites:SpritesEnv',
@@ -19,7 +22,10 @@ register(
     kwargs={'n_distractors': 2}
 )
 
+####################################
 #### State-based follower envs. ####
+####################################
+
 register(
     id='SpritesState-v0',
     entry_point='sprites_env.envs.sprites:SpritesStateEnv',
@@ -39,7 +45,10 @@ register(
     kwargs={'n_distractors': 2}
 )
 
+#################################
 #### Image-based repel envs. ####
+#################################
+
 register(
     id='SpritesRepel-v0',
     entry_point='sprites_env.envs.sprites:SpritesRepelEnv',
@@ -58,7 +67,10 @@ register(
     kwargs={'n_distractors': 2}
 )
 
+#################################
 #### State-based repel envs. ####
+#################################
+
 register(
     id='SpritesRepelState-v0',
     entry_point='sprites_env.envs.sprites:SpritesRepelStateEnv',
