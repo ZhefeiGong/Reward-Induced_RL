@@ -4,7 +4,7 @@ from sprites_datagen.rewards import ZeroReward
 import numpy as np
 import cv2
 
-from general_utils import AttrDict
+from general_utils import AttrDict, make_gif
 from sprites_datagen.moving_sprites import DistractorTemplateMovingSpritesGenerator
 from sprites_env.envs.sprites import SpritesEnv
 
@@ -29,10 +29,11 @@ def TEST_sprites_dataset():
     print("[shape]images : ", traj.images.shape)            # [0 255]
     print("[shape]rewards : ", traj.rewards['zero'].shape)  # rewards
 
-    print("shape_idxs : ", traj.shape_idxs)                 # 
-    print("states: ", traj.states[:,1,:])                   # 
+    # print("shape_idxs : ", traj.shape_idxs)                 # 
+    # print("states: ", traj.states[:,1,:])                   # 
 
     cv2.imwrite("tmp/test.png", img[0].transpose(1, 2, 0))
+    make_gif(imgs = traj.images, path = "tmp/test.gif", fps_default=5)
 
 #@func : test the environment of sprites
 def TEST_sprites_env():
@@ -45,19 +46,20 @@ def TEST_sprites_env():
     )
     env = SpritesEnv()# kwarg['n_distractors'] choose the number of distractors (if not it's one)
     env.set_config(data_spec)
-    
+
     obs = env.reset()
     cv2.imwrite("tmp/test_rl.png", 255 * np.expand_dims(obs, -1))
     
     obs, reward, done, info = env.step([1, 0])
     cv2.imwrite("tmp/test_rl_1.png", 255 * np.expand_dims(obs, -1))
 
+
 if __name__ == "__main__":
 
     TEST_sprites_dataset()
 
     # TEST_sprites_env()
-
+    
     # import gym
     # env = gym.make('Sprites-v1')
     # obs = env.reset()

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import imageio
 
 
 #@func   : 
@@ -59,5 +60,9 @@ def make_image_seq_strip(imgs, n_logged_samples=5, sep_val=0.0):
                                 dim=3, sep_val=sep_val)
 
 
+#@func   : generate the gif figure
+#@author : zhefei gong
+def make_gif(imgs, path, fps_default = 10):
+    return imageio.mimsave(path, imgs.astype(np.uint8), fps=fps_default)
 
 
