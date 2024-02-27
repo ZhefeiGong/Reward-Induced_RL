@@ -7,7 +7,7 @@ import imageio
 #@noteby : zhefei gong
 class AttrDict(dict):
     __setattr__ = dict.__setitem__
-
+    
     def __getattr__(self, attr):
         # Take care that getattr() raises AttributeError, not KeyError.
         # Required e.g. for hasattr(), deepcopy and OrderedDict.
@@ -23,7 +23,7 @@ class AttrDict(dict):
         self = d
 
 
-#@func   : 
+#@func   : Without Use
 #@noteby : zhefei gong
 def get_padding(seq, replace_dim, size, val=0.0):
     """Returns padding tensor of same shape as seq, but with the target dimension replaced to 'size'.
@@ -35,7 +35,7 @@ def get_padding(seq, replace_dim, size, val=0.0):
         return val * np.ones(seq_shape[:replace_dim] + (size,) + seq_shape[replace_dim + 1:])
 
 
-#@func   : 
+#@func   : Without Use
 #@noteby : zhefei gong
 def stack_with_separator(tensors, dim, sep_width=2, sep_val=0.0):
     """Stacks list of tensors along given dimension, adds separator, brings to range [0...1]."""
@@ -51,7 +51,7 @@ def stack_with_separator(tensors, dim, sep_width=2, sep_val=0.0):
     return stack_tensors[0]
 
 
-#@func   : 
+#@func   : Without Use
 #@noteby : zhefei gong
 def make_image_seq_strip(imgs, n_logged_samples=5, sep_val=0.0):
     """Creates image strip where each row contains full rollout of sequence [each element of list makes one row]."""
@@ -64,5 +64,6 @@ def make_image_seq_strip(imgs, n_logged_samples=5, sep_val=0.0):
 #@author : zhefei gong
 def make_gif(imgs, path, fps_default = 10):
     return imageio.mimsave(path, imgs.astype(np.uint8), fps=fps_default)
+
 
 

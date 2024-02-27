@@ -8,18 +8,25 @@ from sprites_datagen.utils.trajectory import ConstantSpeedTrajectory
 
 class MovingSpriteDataset(Dataset):
     """Dataset of multiple sprites bouncing in frame, contains different reward annotations."""
+    # 
     def __init__(self, spec):
         self._spec = spec
         self._generator = DistractorTemplateMovingSpritesGenerator(self._spec)
 
+    # 
+    def __len__(self):
+        return self._spec.dataset_size
+
+    # 
     def __getitem__(self, item):
         traj = self._generator.gen_trajectory()
 
         data_dict = AttrDict()
-        data_dict.images = traj.images[:, None].repeat(3, axis=1).astype(np.float32) / (255./2) - 1.0
-        data_dict.states = traj.states
-        data_dict.shape_idxs = traj.shape_idxs
-        data_dict.rewards = traj.rewards
+        
+        data_dict.images = traj.images[:, None].repeat(3, axis=1).astype(np.float32) / (255./2) - 1.0 # [T, resolution, resolution] -> [-1,1]
+        data_dict.states = traj.states          # [T, shapes_per_traj, 2(x,y)]
+        data_dict.shape_idxs = traj.shape_idxs  # [ AGENT(1) | TARGET(0) | Distractors(...)]
+        data_dict.rewards = traj.rewards        # [max_seq_len]
 
         return data_dict
 

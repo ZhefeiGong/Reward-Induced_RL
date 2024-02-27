@@ -34,4 +34,9 @@
 
 
 
+### Steps : 
+
+1. Reward-Induced Representation Learning Model
+2. The training process with wandb
+
 

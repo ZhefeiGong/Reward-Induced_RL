@@ -1,6 +1,6 @@
 import cv2
 from general_utils import make_image_seq_strip
-from sprites_datagen.rewards import ZeroReward
+from sprites_datagen.rewards import *
 import numpy as np
 import cv2
 
@@ -17,9 +17,9 @@ def TEST_sprites_dataset():
         max_speed=0.05,             # total image range [0, 1]
         obj_size=0.2,               # size of objects, full images is 1.0
         shapes_per_traj=4,          # number of shapes per trajectory
-        rewards=[ZeroReward],
+        rewards=[ZeroReward, AgentXReward],
     )
-
+    
     gen = DistractorTemplateMovingSpritesGenerator(spec)
     traj = gen.gen_trajectory()
     img = make_image_seq_strip([traj.images[None, :, None].repeat(3, axis=2).astype(np.float32)], sep_val=255.0).astype(np.uint8)
@@ -27,8 +27,8 @@ def TEST_sprites_dataset():
     print("[shape]states: ", traj.states.shape)             # [T,N,2]
     print("[shape]shape_idxs: ", traj.shape_idxs.shape)     # [0 1 2 3 ...]
     print("[shape]images : ", traj.images.shape)            # [0 255]
-    print("[shape]rewards : ", traj.rewards['zero'].shape)  # rewards
-
+    print("[shape]rewards : ", traj.rewards[ZeroReward.NAME].shape)  # rewards
+    
     # print("shape_idxs : ", traj.shape_idxs)                 # 
     # print("states: ", traj.states[:,1,:])                   # 
 
