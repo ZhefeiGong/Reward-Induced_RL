@@ -11,7 +11,11 @@ class MovingSpriteDataset(Dataset):
     # 
     def __init__(self, spec):
         self._spec = spec
+        # COMMON for two objects as least (Agent+Target)
         self._generator = DistractorTemplateMovingSpritesGenerator(self._spec)
+        # SPECIAL for one object
+        if self._spec.shapes_per_traj <= 1:
+            self._generator = TemplateMovingSpritesGenerator(self._spec)
 
     # 
     def __len__(self):

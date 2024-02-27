@@ -31,7 +31,8 @@ REWARDS = {
 }
 
 #############################################
-##
+##@func      : 
+##@author    : Zhefei Gong
 #############################################
 def train_reward_prediction(args):
 
@@ -117,6 +118,15 @@ def train_reward_prediction(args):
     if args.use_wandb:
         wandb.finish()
 
+
+#############################################
+##@func      : 
+##@author    : Zhefei Gong
+#############################################
+def train_image_reconstruction():
+    pass
+
+
 #############################################
 ##
 #############################################
@@ -156,11 +166,12 @@ if __name__ == "__main__":
     # parser.add_argument('--N', type=int, default=5, help='initial time window size') ？？？
 
     args = parser.parse_args()
+    
+
 
     print('[INFO] =================== [args] =================== ')
     print(args)
     print('[INFO] =================== [args] =================== ')
-
     print('[INFO] Begin to train...')
 
     train_reward_prediction(args)

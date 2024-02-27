@@ -24,7 +24,7 @@ class VertPosReward(Reward):
     NAME = 'vertical_position'
     
     def __call__(self, trajectories, shapes):
-        return trajectories[:, 0, 1] # !!! ERROR !!!
+        return trajectories[:, 0, 1] # !!! ERROR !!! -> trajectories[:,0,0]
 
 
 class HorPosReward(Reward):
@@ -32,7 +32,7 @@ class HorPosReward(Reward):
     NAME = 'horizontal_position'
 
     def __call__(self, trajectories, shapes):
-        return trajectories[:, 0, 0] # !!! ERROR !!!
+        return trajectories[:, 0, 0] # !!! ERROR !!! -> trajectories[:,0,1]
 
 
 class AgentXReward(Reward):

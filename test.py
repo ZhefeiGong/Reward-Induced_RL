@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 
 from general_utils import AttrDict, make_gif
-from sprites_datagen.moving_sprites import DistractorTemplateMovingSpritesGenerator
+from sprites_datagen.moving_sprites import DistractorTemplateMovingSpritesGenerator,TemplateMovingSpritesGenerator
 from sprites_env.envs.sprites import SpritesEnv
 
 
@@ -16,11 +16,12 @@ def TEST_sprites_dataset():
         max_seq_len=30,             # the length of the sequence
         max_speed=0.05,             # total image range [0, 1]
         obj_size=0.2,               # size of objects, full images is 1.0
-        shapes_per_traj=4,          # number of shapes per trajectory
+        shapes_per_traj=1,          # number of shapes per trajectory
         rewards=[ZeroReward, AgentXReward],
     )
-    
     gen = DistractorTemplateMovingSpritesGenerator(spec)
+    if spec.shapes_per_traj == 1:
+        gen = TemplateMovingSpritesGenerator(spec)
     traj = gen.gen_trajectory()
     img = make_image_seq_strip([traj.images[None, :, None].repeat(3, axis=2).astype(np.float32)], sep_val=255.0).astype(np.uint8)
     
