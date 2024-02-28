@@ -10,7 +10,7 @@
  5. If your implementation is working, (1) the image-based agent with pre-training should be able to follow the target shape with up to one distractor, and (2) it should learn faster than the image-based agent trained from scratch (but likely slower than the oracle).
 
 
-### INFO about DATA:
+### INFO :
 
 1. dataset - trajectory : 
     * states
@@ -32,11 +32,22 @@
     env = gym.make('Sprites-v1')
     ``` 
 
+3. Pytorch 
+    * Conv2d
+        $$
+H_{out} =[\frac{H_{in}+2×padding[0]−dilation[0]×(kernel\_size[0]−1)−1}{stride[0]} +1\]
+        $$
+    * ConvTranspose2d
+        $$
+H_{out} =(H_{in}−1)×stride[0]−2×padding[0]+dilation[0]×(kernel\_size[0]−1)+output\_padding[0]+1
+        $$ 
+
+
 
 
 ### Steps : 
 
 1. Reward-Induced Representation Learning Model
 2. The training process with wandb
-
+3. Decoder
 

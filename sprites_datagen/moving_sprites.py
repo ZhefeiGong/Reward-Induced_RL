@@ -27,7 +27,9 @@ class MovingSpriteDataset(Dataset):
 
         data_dict = AttrDict()
         
-        data_dict.images = traj.images[:, None].repeat(3, axis=1).astype(np.float32) / (255./2) - 1.0 # [T, resolution, resolution] -> [-1,1]
+        # data_dict.images = traj.images[:, None].repeat(3, axis=1).astype(np.float32) / (255./2) - 1.0 # [T, 3, resolution, resolution] -> [-1,1]
+
+        data_dict.images = traj.images[:, None].astype(np.float32) / 255. # [T, 1, resolution, resolution] -> [0,1]
         data_dict.states = traj.states          # [T, shapes_per_traj, 2(x,y)]
         data_dict.shape_idxs = traj.shape_idxs  # [ AGENT(1) | TARGET(0) | Distractors(...)]
         data_dict.rewards = traj.rewards        # [max_seq_len]
