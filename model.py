@@ -89,13 +89,13 @@ class DECODER(nn.Module):
         #### last layer <<-->> C[4->output_channels] R[*2] ####
         self.layers.append(nn.ConvTranspose2d(current_channels, self.output_channels, kernel_size=3, stride=2, padding=1, output_padding=1))   
         
-        self.layers.append(nn.ReLU())   # if the datasst input size is [-1, 1], so we shouldn't use ReLU to restrict the range of data
-                                        # if the datasst input size is [0, 1], we shoudl use ReLU to restrict the range of data
+        # self.layers.append(nn.ReLU())     # if the datasst input size is [-1, 1], so we shouldn't use ReLU to restrict the range of data
+                                            # if the datasst input size is [0, 1], we shoudl use ReLU to restrict the range of data
 
     #
     def w_init(self):
         for module in self.modules():
-            if isinstance(module, nn.Conv2d):
+            if isinstance(module, nn.ConvTranspose2d):
                 # Conv2d - fan_in
                 nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
                 if module.bias is not None:
@@ -113,7 +113,7 @@ class DECODER(nn.Module):
         x = F.relu(x)                     # 
         x = x.unsqueeze(-1).unsqueeze(-1) # [T, current_channels, 1, 1]
         for layer in self.layers:
-            x = layer(x)
+            x = layer(x)                    # [T, output_channels, output_resolution, output_resolution]
 
         return x
 
@@ -242,6 +242,11 @@ class MODEL_REWARD_PRD(nn.Module):
                 nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)  # bias
+            elif isinstance(module, nn.ConvTranspose2d):
+                # Conv2d - fan_in
+                nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)  # bias
             elif isinstance(module, nn.Linear):
                 # Linear - fan_out
                 nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
@@ -292,8 +297,6 @@ class MODEL_IMAGE_SCRATCH(nn.Module):
 
     def w_init(self):
         pass
-
-
 
 
 if __name__ == "__main__":

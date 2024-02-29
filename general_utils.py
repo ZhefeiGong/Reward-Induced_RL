@@ -75,7 +75,7 @@ def mean_distribution(imgs_pred_visual):
 
 #@func   : 
 #@author : zhefei gong
-def make_figure2(imgs_gt, imgs_pred, num_visual = 6):
+def make_figure2(imgs_gt, imgs_pred, num_visual = 11):
     """
     @config :   1. imgs_pred and imgs_gt have the shape of [T,C,H,W]
     """
@@ -84,13 +84,14 @@ def make_figure2(imgs_gt, imgs_pred, num_visual = 6):
     num_pics = len(imgs_pred)
     idxs = np.linspace(0, num_pics, num_visual, endpoint=False, dtype=int)
     imgs_pred_visual = mean_distribution(imgs_pred[idxs,:,:,:])
-    imgs_gt_visual = imgs_gt[idxs,:,:,:]
+    imgs_gt_visual = imgs_gt[idxs,:,:,:] * 255.0
+
+    # print(torch.unique(imgs_pred_visual[0,:,:,:]))
+    # print(torch.unique(imgs_pred_visual[-1,:,:,:]))
     
-    # print(torch.unique(imgs_pred_visual))
-    # print(torch.unique(imgs_gt_visual))
-    
-    grid1 = vutils.make_grid(imgs_gt_visual, nrow=num_visual, normalize=True, pad_value=1)
-    grid2 = vutils.make_grid(imgs_pred_visual, nrow=num_visual, normalize=True, pad_value=1)
+    grid1 = vutils.make_grid(imgs_gt_visual, nrow=num_visual, pad_value=1)
+    grid2 = vutils.make_grid(imgs_pred_visual, nrow=num_visual, pad_value=1)
+
     combined_grid = torch.cat((grid1, grid2), dim=1) 
 
     return combined_grid, idxs

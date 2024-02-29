@@ -65,6 +65,7 @@ def train_reward_prediction_model(args):
         dataset_size=args.dataset_size,         # the number of epoches 
         shapes_per_traj=args.shapes_per_traj,   # number of shapes per trajectory
         rewards=_rewards,                       # rewards
+        input_channels = args.input_channels,   #
     )
     train_loader = DataLoader(dataset = MovingSpriteDataset(spec=_spec), batch_size = args.batch_size, shuffle=True)
 
@@ -198,6 +199,7 @@ def train_image_reconstruction_decoder(args):
         dataset_size=args.dataset_size,         # the number of trajectories
         shapes_per_traj=args.shapes_per_traj,   # number of shapes per trajectory
         rewards=_rewards,                       # rewards
+        input_channels = args.input_channels,   #
     )
     _spec_eval = AttrDict(
         resolution=args.resolution,             # the resolution of images
@@ -207,13 +209,14 @@ def train_image_reconstruction_decoder(args):
         dataset_size=args.max_epoch+1,          # the number of trajectories
         shapes_per_traj=args.shapes_per_traj,   # number of shapes per trajectory
         rewards=_rewards,                       # rewards
+        input_channels = args.input_channels,   #
     )
     train_dataloader = DataLoader(dataset = MovingSpriteDataset(spec=_spec_train), batch_size = args.batch_size, shuffle=True)
     eval_dataloader = DataLoader(dataset = MovingSpriteDataset(spec=_spec_eval), batch_size = args.batch_size, shuffle=True)
     eval_dataloader_iter = iter(eval_dataloader)
 
+    # RUN
     epoch_loss_min = float("inf")
-
     for epoch in range(args.max_epoch):  #      
 
         # ========================= TRAIN =========================
@@ -234,11 +237,13 @@ def train_image_reconstruction_decoder(args):
                 # [**] Make other frames as zero [**]
                 x = torch.cat([x, torch.zeros((args.max_seq_len - args.max_cond_frame_len, x.size()[1], x.size()[2], x.size()[3]))])
 
-                # rewards_gt = torch.squeeze(torch.stack([torch.squeeze(batch.rewards[reward.NAME]) for reward in _rewards]))  # [N, T]
                 out = encoder(x) # [T,C,H,W] -> [T, dim]
                 out = mlp(out)  # [T, dim] -> [T, dim]
                 out = lstm(out) # [T, dim] -> [T, dim]
-                images_recon = decoder(out) # [T, dim] -> [T,C,H,W]
+                
+                out_detached = out.detach()
+                
+                images_recon = decoder(out_detached) # [T, dim] -> [T,C,H,W]
 
                 loss = criterion(input=images_recon, target=images_gt)
                 
@@ -272,11 +277,12 @@ def train_image_reconstruction_decoder(args):
             out = encoder(x) # [T,C,H,W] -> [T, dim]
             out = mlp(out)  # [T, dim] -> [T, dim]
             out = lstm(out) # [T, dim] -> [T, dim]
-            out_detached = out.detach()
-            images_recon = decoder(out_detached) # [T, dim] -> [T,C,H,W]
-            valid_loss = criterion(input=images_gt, target=images_recon)
+
+            out_detached = out.detach() # Detached
             
-            fig2, idxs = make_figure2(imgs_gt = images_gt, imgs_pred = images_recon)
+            images_recon = decoder(out_detached) # [T, dim] -> [T,C,H,W]
+            
+            valid_loss = criterion(input=images_gt, target=images_recon)
 
             if args.is_use_wandb:
                 fig2, idxs = make_figure2(imgs_gt = images_gt, imgs_pred = images_recon)

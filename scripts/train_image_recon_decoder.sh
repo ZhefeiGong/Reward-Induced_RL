@@ -1,8 +1,8 @@
 python ./pre_train.py \
 --mode 'image_reconstruction_decoder' \
 --wandb_project 'image_reconstruction_decoder' \
---wandb_exp 'run8-part-data-1c' \
---weight_save_path './weights/dec/' \
+--wandb_exp 'run2-part-data-1c-ver' \
+--weight_save_path './weights/ver_dec/' \
 --weight_save_interval 5 \
 --dataset 'Sprites' \
 --dataset_size 50 \
@@ -20,13 +20,12 @@ python ./pre_train.py \
 --max_speed 0.05 \
 --obj_size 0.2 \
 --shapes_per_traj 1 \
---rewards 'horizontal_position' \
---weight_load_path './weights/hor_1c/' \
+--rewards 'vertical_position' \
+--weight_load_path './weights/ver_1c/' \
 --weight_load_type 'reward-pred' \
---weight_load_tag '[sh-1]_[trj-30]_[epo-500]_[size-200]-[rwd-horizontal_position]' \
+--weight_load_tag '[sh-1]_[trj-30]_[epo-500]_[size-100]-[rwd-vertical_position]' \
 --is_use_wandb \
+--is_weight_save \
+--is_weight_save_best \
 
-# --is_weight_save \
-# --is_weight_save_best \
-
-# --rewards 'agent_x' 'agent_y' 'target_x' 'target_y' \
+# --rewards 'agent_x' 'agent_y' 'target_x' 'target_y' 'vertical_position' \
