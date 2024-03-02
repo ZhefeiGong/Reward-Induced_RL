@@ -60,7 +60,6 @@ class ENCODER(nn.Module):
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)  # bias
 
-
 ##################################################
 ##@time   : 
 ##@author : Zhefei Gong
@@ -152,8 +151,6 @@ class MLPs(nn.Module):
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)  # bias
 
-
-
 ##################################################
 ##@time   : 
 ##@author : Zhefei Gong
@@ -172,7 +169,6 @@ class LSTM(nn.Module):
     def forward(self, x):
         x, _ = self.lstm(x) # (N, L, H_in) -> (N, L, D*H_in) & [D=2 if bidirectional=True otherwise 1]
         return x
-
 
 ##################################################
 ##@time   : 
@@ -253,7 +249,6 @@ class MODEL_REWARD_PRD(nn.Module):
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)  # bias
 
-
 ##################################################
 ##@time   : 
 ##@author : Zhefei Gong
@@ -266,7 +261,6 @@ class MODEL_IMAGE_REC(nn.Module):
     
     def forward(self):
         pass
-
 
 ##################################################
 ##@time   : 
@@ -297,6 +291,22 @@ class MODEL_IMAGE_SCRATCH(nn.Module):
 
     def w_init(self):
         pass
+
+##################################################
+##@time   : 
+##@author : Zhefei Gong
+##@func   : 
+##################################################
+class MODEL_ACTOR_CRITIC(nn.Module):
+    def __init__(self):
+        super(MODEL_ACTOR_CRITIC, self).__init__()
+
+    def forward(self):
+        pass
+
+    def w_init(self):
+        pass
+
 
 
 if __name__ == "__main__":

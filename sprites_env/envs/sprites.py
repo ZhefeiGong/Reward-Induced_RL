@@ -39,10 +39,11 @@ class SpritesEnv(gym.Env):
         self._shape_sprites = self._get_shape_sprites()  # generate geometric shape templates
         self._template_blender = TemplateBlender((self.resolution, self.resolution))
 
+        # images
         self.observation_space = Box(low=0.0, high=1.0,
                 shape=(self.resolution, self.resolution),
                 dtype=np.float32)
-
+        # velocity
         self.action_space = Box(low=-1.0, high=1.0,
                 shape=(2,),
                 dtype=np.float32
@@ -81,7 +82,7 @@ class SpritesEnv(gym.Env):
         pos, vel = np.split(state, 2, -1)
 
         pos += vel
-
+        
         # Enables shapes bouncing off of walls
         for d in range(self._n_dim):
             too_small = np.less(pos[:, d], self._bounds[d, 0])
@@ -122,14 +123,14 @@ class SpritesEnv(gym.Env):
     def step(self, action):
         vel = np.array(action) * self.max_speed
         state = self._state.copy()
-        state[0,2:] = vel
+        state[0,2:] = vel               # Change Agent-Position | Other Agent-Position Invariant
         pos_state, self._state = self.forward(state)
 
         im = self._render(np.expand_dims(pos_state, 0), self.shapes).squeeze(0)
-        reward = self._reward(self._state)
+        reward = self._reward(self._state) # 
 
         self.ep_len += 1
-        done = (self.ep_len >= self.max_ep_len)
+        done = (self.ep_len >= self.max_ep_len) #
         info = {}
 
         return im / 255, reward, done, info
@@ -139,9 +140,9 @@ class SpritesEnv(gym.Env):
         target_pos = state[1, :2]
 
         if self.follow:
-            return 1. - np.sqrt(((target_pos - agent_pos) ** 2).sum()) / np.sqrt(2)
+            return 1. - np.sqrt(((target_pos - agent_pos) ** 2).sum()) / np.sqrt(2) # !!! More Close <<-->> More Value !!!
         else:
-            return np.sqrt(((target_pos - agent_pos) ** 2).sum()) / np.sqrt(2)
+            return np.sqrt(((target_pos - agent_pos) ** 2).sum()) / np.sqrt(2) # 
 
     def _render(self, trajectories, shapes):
         sprites = [self._shape_sprites[shape] for shape in shapes]

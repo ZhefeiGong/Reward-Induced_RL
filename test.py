@@ -34,12 +34,15 @@ def TEST_sprites_dataset():
     # print("states: ", traj.states[:,1,:])                   # 
 
     cv2.imwrite("tmp/test.png", img[0].transpose(1, 2, 0))
+
+    print(traj.images.shape)
+
     make_gif(imgs = traj.images, path = "tmp/test.gif", fps_default=5)
 
 #@func : test the environment of sprites
 def TEST_sprites_env():
     data_spec = AttrDict(
-        resolution=64,
+        resolution=128,
         max_ep_len=40,
         max_speed=0.05,     # total image range [0, 1]
         obj_size=0.2,       # size of objects, full images is 1.0
@@ -50,16 +53,32 @@ def TEST_sprites_env():
 
     obs = env.reset()
     cv2.imwrite("tmp/test_rl.png", 255 * np.expand_dims(obs, -1))
+
+    # Control the Movement of the Agent by 
+    # Passing in a 2D Array of X,Y-Velocities
     
-    obs, reward, done, info = env.step([1, 0])
+    batch_obs = []
+    for i in range(200):
+        obs, reward, done, info = env.step([00.1, 0])
+        batch_obs.append(obs)
+        if done:
+            print(reward)
+    
+    make_gif(imgs = np.array(batch_obs) * 255, path = "tmp/test_env.gif", fps_default=10)
+
+    # print(obs.shape) # [64,64]
+    # print(reward) # value
+    # print(done) # True / False
+    # print(info) # {}
+
     cv2.imwrite("tmp/test_rl_1.png", 255 * np.expand_dims(obs, -1))
 
 
 if __name__ == "__main__":
 
-    TEST_sprites_dataset()
+    # TEST_sprites_dataset()
 
-    # TEST_sprites_env()
+    TEST_sprites_env()
     
     # import gym
     # env = gym.make('Sprites-v1')

@@ -320,7 +320,6 @@ def train_image_reconstruction_decoder(args):
 def train_image_reconstruction():
     pass
 
-
 #############################################
 ##
 #############################################

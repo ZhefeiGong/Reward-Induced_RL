@@ -66,7 +66,6 @@ def make_image_seq_strip(imgs, n_logged_samples=5, sep_val=0.0):
 def make_gif(imgs, path, fps_default = 10):
     return imageio.mimsave(path, imgs.astype(np.uint8), fps=fps_default)
 
-
 #@func   : 
 #@author : zhefei gong
 def mean_distribution(imgs_pred_visual):
@@ -95,3 +94,23 @@ def make_figure2(imgs_gt, imgs_pred, num_visual = 11):
     combined_grid = torch.cat((grid1, grid2), dim=1) 
 
     return combined_grid, idxs
+
+#@func : 
+def sum_independent_dims(tensor: torch.Tensor) -> torch.Tensor:
+    """
+    Continuous actions are usually considered to be independent,
+    so we can sum components of the ``log_prob`` or ``the entropy``.
+
+    :param tensor: shape: (n_batch, n_actions) or (n_batch,)
+    :return: shape: (n_batch,)
+    """
+    if len(tensor.shape) > 1:
+        tensor = tensor.sum(dim=1)
+    else:
+        tensor = tensor.sum()
+    return tensor
+
+
+#@func : 
+def set_random_seed(num):
+    pass

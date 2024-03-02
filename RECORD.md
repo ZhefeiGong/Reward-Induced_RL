@@ -24,6 +24,9 @@
         * 👉 - y - horizontal 
     * rewards
         * value
+    * obejcts
+        * the velocities of each objects are invariant in each rollout
+        * unless you use environment to change the velocities of the Agent(Circle) to chase the Target(Rectangle)
 
 2. environment :
     * just run :
@@ -43,11 +46,11 @@ H_{out} =(H_{in}−1)×stride[0]−2×padding[0]+dilation[0]×(kernel\_size[0]�
         $$ 
 
 
-
-
 ### Steps : 
 
 1. Reward-Induced Representation Learning Model
 2. The training process with wandb
 3. Decoder
+4. Actor-Critic
+5. PPO
 
