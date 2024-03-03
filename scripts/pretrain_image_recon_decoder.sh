@@ -24,8 +24,8 @@ python ./pre_train.py \
 --weight_load_path './weights/ver_1c/' \
 --weight_load_type 'reward-pred' \
 --weight_load_tag '[sh-1]_[trj-30]_[epo-500]_[size-100]-[rwd-vertical_position]' \
---is_use_wandb \
 --is_weight_save \
 --is_weight_save_best \
+--is_use_wandb \
 
 # --rewards 'agent_x' 'agent_y' 'target_x' 'target_y' 'vertical_position' \

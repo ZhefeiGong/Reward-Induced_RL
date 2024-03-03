@@ -2,17 +2,14 @@
 #@func   : 
 #@author : Zhefei Gong
 
-
-import wandb
-
 import gym
 import torch
+import wandb
 from tqdm import tqdm
 import torch.nn as nn
 import argparse
 from general_utils import AttrDict
 from ppo import MODEL_PPO
-
 
 #@func : 
 def train_ppo(args):
@@ -40,18 +37,33 @@ def train_ppo(args):
 
     # MODEL
     _spec = AttrDict(
+        
+        # PPO
         mode = args.mode,
         num_timestep_total = args.num_timestep_total,
         num_timestep_per_batch = args.num_timestep_per_batch,
         num_timestep_per_episode = args.num_timestep_per_episode,
-        input_channels = args.input_channels,
         normalization_bias = args.normalization_bias,
-        latent_size = args.latent_size,
         r_gamma = args.r_gamma,
         clip_epsilon = args.clip_epsilon,
         coef_value_loss = args.coef_value_loss,
         coef_entropy_loss = args.coef_entropy_loss,
+
+        # MODEL
+        latent_size_net = args.latent_size_net, # 32/64
+        input_channels = args.input_channels, # 1
+        input_resolution = args.input_resolution, # 64
+        cnn_latent_channels = args.cnn_latent_channels, # 16
+        output_channels = args.output_channels, # 64
+
+        output_size_policy = args.output_size_policy, # 64
+        output_size_value = args.output_size_value, # 64
+
+        reward_w_path = args.reward_w_path, # PATH
+        reconstruction_w_path = args.reconstruction_w_path # PATH
+
     )
+
     ppo_agent = MODEL_PPO(env=env, spec=_spec)
     ppo_agent.w_init() # initialize the weights
 
@@ -77,12 +89,12 @@ def train_ppo(args):
         # CRITIC
         with torch.enable_grad():
             for _ in range(num_update_per_batch):
-                optimizer.zero_grad()
-                loss = ppo_agent.update()
-                loss.backward()
-                avg_loss_per_batch += loss.item()
-                nn.utils.clip_grad_norm_(ppo_agent.agent.parameters(), max_grad_norm) # 
-                optimizer.step()
+                optimizer.zero_grad()                   # <<-->> clear accumulated gradient
+                loss = ppo_agent.update()               # <<-->> update
+                loss.backward()                         # <<-->> backwards
+                avg_loss_per_batch += loss.item()       # record
+                nn.utils.clip_grad_norm_(ppo_agent.agent.parameters(), max_grad_norm) # <<-->> clip
+                optimizer.step()                        # <<-->> optimize
         
         # tqdm
         sum_rewards = sum([item for sublist in ppo_agent.buffer.rewards for item in sublist])
@@ -156,7 +168,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_timestep_per_episode', type=int, default=40, help="[NOTICE] ")
     parser.add_argument('--num_update_per_batch', type=int, default=10, help="[NOTICE] ")
     parser.add_argument('--normalization_bias', type=float, default=1e-9, help="[NOTICE] ")
-    parser.add_argument('--latent_size', type=int, default=64, help="[NOTICE] ")
+
     parser.add_argument('--r_gamma', type=float, default=0.95, help="[NOTICE] ")
     parser.add_argument('--clip_epsilon', type=float, default=0.2, help="[NOTICE] ")
     parser.add_argument('--coef_value_loss', type=float, default=0.5, help="[NOTICE] ")
@@ -164,6 +176,18 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate_ppo', type=float, default=3e-4, help="[NOTICE] ")
     parser.add_argument('--max_grad_norm', type=float, default=0.5, help="[NOTICE] ")
 
+    # AC
+    parser.add_argument('--latent_size_net', type=int, default=32, help="[NOTICE] ") 
+    parser.add_argument('--input_resolution', type=int, default=64, help="[NOTICE] ") 
+    parser.add_argument('--cnn_latent_channels', type=int, default=16, help="[NOTICE] ") 
+    parser.add_argument('--output_channels', type=int, default=64, help="[NOTICE] the output channels of the encoder in Actor-Critic") 
+
+    parser.add_argument('--output_size_policy', type=int, default=64, help="[NOTICE] ") 
+    parser.add_argument('--output_size_value', type=int, default=1, help="[NOTICE] ") 
+
+    parser.add_argument('--reward_w_path', type=str, default='', help="[NOTICE] ") 
+    parser.add_argument('--reconstruction_w_path', type=str, default='', help="[NOTICE] ") 
+    
     # CHOSE
     parser.add_argument('--num_distractors', type=int, default=0, help="[NOTICE] ")
     parser.add_argument('--mode', type=str, default='oracle', help="[NOTICE] ")
@@ -187,9 +211,17 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print('[INFO] =================== [args] =================== ')
-    print(args)
-    print('[INFO] =================== [args] =================== ')
-    print('[INFO] Begin to train...')
+    # CHANGE
+    if args.mode == 'cnn':
+        args.latent_size_net = 64
+    else:
+        args.latent_size_net = 32
+
+    # SHOW
+    
+    # print('[INFO] =================== [args] =================== ')
+    # print(args)
+    # print('[INFO] =================== [args] =================== ')
+    # print('[INFO] Begin to train...')
 
     train_ppo(args)

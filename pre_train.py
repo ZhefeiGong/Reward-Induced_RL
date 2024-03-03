@@ -11,15 +11,15 @@ import torch.optim as optim
 
 from tqdm import tqdm
 
-from model import MODEL_REWARD_PRD,ENCODER,DECODER,LSTM,MLPs
+from model import MODEL_REWARD_PRD,ENCODER,DECODER,LSTM,MLPs,MODEL_IMAGE_REC
 from sprites_datagen.moving_sprites import MovingSpriteDataset
 from general_utils import AttrDict,make_figure2
 from torch.utils.data import DataLoader
 from sprites_datagen.rewards import *
 
-#############################################
+#######################################################################################################################################
 ##
-#############################################
+#######################################################################################################################################
 REWARDS = {
     'zero': ZeroReward,
     'vertical_position': VertPosReward, 
@@ -30,10 +30,10 @@ REWARDS = {
     'target_y': TargetYReward,
 }
 
-#############################################
+#######################################################################################################################################
 ##@func      : 
 ##@author    : Zhefei Gong
-#############################################
+#######################################################################################################################################
 def train_reward_prediction_model(args):
     # WANDB
     if args.is_use_wandb:
@@ -121,12 +121,12 @@ def train_reward_prediction_model(args):
 
             if args.is_use_wandb:
                 wandb.log({"valid_loss": valid_loss})
-    
+
         # ========================= SAVE =========================
         if args.is_weight_save :
             
             reward_tag = '-'.join(args.rewards)
-            train_tag = f"[sh-{args.shapes_per_traj}]_[trj-{args.max_seq_len}]_[epo-{args.max_epoch}]_[size-{args.dataset_size}]-[rwd-{reward_tag}].pth"
+            train_tag = f"[sh-{args.shapes_per_traj}]_[trj-{args.max_seq_len}]_[cf-{args.max_cond_frame_len}]_[epo-{args.max_epoch}]_[size-{args.dataset_size}]-[rwd-{reward_tag}].pth"
 
             # save the best weight
             if args.is_weight_save_best:
@@ -147,10 +147,10 @@ def train_reward_prediction_model(args):
     if args.is_use_wandb:
         wandb.finish()
 
-#############################################
+#######################################################################################################################################
 ##@func      : 
 ##@author    : Zhefei Gong
-#############################################
+#######################################################################################################################################
 def train_image_reconstruction_decoder(args):
 
     # WANDB
@@ -314,16 +314,109 @@ def train_image_reconstruction_decoder(args):
     if args.is_use_wandb:
         wandb.finish()
 
-#############################################
+#######################################################################################################################################
 ##@func      : 
 ##@author    : Zhefei Gong
-#############################################
-def train_image_reconstruction():
-    pass
+#######################################################################################################################################
+def train_image_reconstruction_model(agrs):
 
-#############################################
+    # WANDB
+    if args.is_use_wandb:
+        wandb.init(project=args.wandb_project, 
+                name=args.wandb_exp,
+                config=args)
+
+    # MODEL
+    _rewards = [REWARDS[reward] for reward in args.rewards] if args.rewards is not None else [ZeroReward]
+    model = MODEL_IMAGE_REC(resolution = args.resolution,
+                            image_channels = args.input_channels,
+                            latent_size = args.hidden_dim)
+    model.w_init() # init with kaiming
+    
+    # CRITERIA
+    criterion = nn.MSELoss()
+    optimizer = optim.RAdam(model.parameters(), lr=args.learning_rate, betas=[0.9, 0.999])
+    lr_scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=args.scheduler_gamma)
+
+    # DATASET
+    _spec = AttrDict(
+        resolution=args.resolution,             # the resolution of images
+        max_seq_len=args.max_seq_len,           # the length of the sequence
+        max_speed=args.max_speed,               # total image range [0, 1]
+        obj_size=args.obj_size,                 # size of objects, full images is 1.0
+        dataset_size=args.dataset_size,         # the number of epoches 
+        shapes_per_traj=args.shapes_per_traj,   # number of shapes per trajectory
+        rewards=_rewards,                       # rewards
+        input_channels = args.input_channels,   #
+    )
+    train_loader = DataLoader(dataset = MovingSpriteDataset(spec=_spec), batch_size = args.batch_size, shuffle=True)
+
+    # RUN - [*] train with "batch_size=1" [*]
+    epoch_loss_min = float("inf")
+    for epoch in range(args.max_epoch):  #      
+
+        # ========================= TRAIN =========================
+        epoch_loss = 0
+        model.train()
+        with tqdm(train_loader, unit="batch") as tepoch:
+            for batch in tepoch:
+                tepoch.set_description(f"Epoch {epoch}")
+
+                optimizer.zero_grad()
+                
+                imgs = torch.squeeze(batch.images, dim=0) # [1, T, C, H, W] -> [T, C, H, W]
+                imgs_rec = model(imgs)
+                
+                loss = criterion(input=imgs_rec, target=imgs)
+                
+                loss.backward()
+                optimizer.step()
+
+                epoch_loss += loss.item()
+                
+                # wandb
+                if args.is_use_wandb:
+                    wandb.log({"train_loss": loss.item()})
+                
+                # tqdm
+                tepoch.set_postfix(loss=loss.item())
+            
+            lr_scheduler.step()
+
+        # ========================= EVAL =========================
+        model.eval()
+        with torch.no_grad():
+            valid_loss = 0.0
+
+            if args.is_use_wandb:
+                wandb.log({"valid_loss": valid_loss})
+
+        # ========================= SAVE =========================
+        if args.is_weight_save :
+            
+            reward_tag = '-'.join(args.rewards)
+            train_tag = f"[sh-{args.shapes_per_traj}]_[trj-{args.max_seq_len}]_[epo-{args.max_epoch}]_[size-{args.dataset_size}]-[rwd-{reward_tag}].pth"
+
+            # save the best weight
+            if args.is_weight_save_best:
+                if epoch_loss < epoch_loss_min:
+                    epoch_loss_min = epoch_loss
+                    print('[SAVE] save the weights as : ', train_tag, f'[EPOCH-{epoch} | LOSS-{epoch_loss_min}')
+                    torch.save(model.encoder.state_dict(), args.weight_save_path+"image-rec_encoder_"+train_tag)
+            
+            # save the weight with training process
+            elif epoch % args.weight_save_interval == 0 and epoch != 0:
+                print('[SAVE] save the weights as : ', train_tag, f'[EPOCH-{epoch} | LOSS-{epoch_loss}')
+                torch.save(model.encoder.state_dict(), args.weight_save_path+f"image-rec_encoder[{epoch}]_"+train_tag)
+    
+    if args.is_use_wandb:
+        wandb.finish()
+
+    
+
+#######################################################################################################################################
 ##
-#############################################
+#######################################################################################################################################
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -369,7 +462,6 @@ if __name__ == "__main__":
     parser.add_argument('--shapes_per_traj', type=int, default=2, help="[NOTICE] ") # assume " [ AGENT(1) | TARGET(0) | Distractors(...)] "
     parser.add_argument('--rewards', nargs='+', type=str, default=['agent_y','agent_x','target_x','target_y'], help='[NOTICE] ')
 
-
     args = parser.parse_args()
 
     print('[INFO] =================== [args] =================== ')
@@ -377,7 +469,12 @@ if __name__ == "__main__":
     print('[INFO] =================== [args] =================== ')
     print('[INFO] Begin to train...')
 
+
     if args.mode == 'reward_prediction_model':
         train_reward_prediction_model(args)
     elif args.mode == 'image_reconstruction_decoder':
         train_image_reconstruction_decoder(args)
+    elif args.mode == 'image_reconstruction_model':
+        train_image_reconstruction_model(args)
+    else :
+        pass

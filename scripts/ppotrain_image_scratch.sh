@@ -1,8 +1,8 @@
 python ./ppo_train.py \
---mode 'oracle' \
+--mode 'image_scratch' \
 --num_distractors 0 \
 --wandb_project 'baseline' \
---wandb_exp 'oracle-run2' \
+--wandb_exp 'image_scratch-run1' \
 --num_timestep_total 50000 \
 --num_timestep_per_batch 400 \
 --num_timestep_per_episode 40 \

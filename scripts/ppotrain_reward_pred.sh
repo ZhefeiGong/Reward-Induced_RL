@@ -1,8 +1,8 @@
 python ./ppo_train.py \
---mode 'oracle' \
+--mode 'reward_prediction' \
 --num_distractors 0 \
 --wandb_project 'baseline' \
---wandb_exp 'oracle-run2' \
+--wandb_exp 'reward_prediction-run1' \
 --num_timestep_total 50000 \
 --num_timestep_per_batch 400 \
 --num_timestep_per_episode 40 \
@@ -21,7 +21,7 @@ python ./ppo_train.py \
 --output_channels 64 \
 --output_size_policy 64 \
 --output_size_value 1 \
---reward_w_path '' \
+--reward_w_path 'weights/fig3/rwd_xyxy/reward-pred_encoder_[sh-2]_[trj-40]_[cf-5]_[epo-500]_[size-100]-[rwd-agent_x-agent_y-target_x-target_y].pth' \
 --reconstruction_w_path '' \
 --is_use_wandb \
 

@@ -9,9 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Normal
 from general_utils import sum_independent_dims
-
 from sprites_env.envs.sprites import SpritesEnv, SpritesStateEnv
-from baseline import MODEL_ORACLE
+from baseline import MODEL_ORACLE, MODEL_CNN, MODEL_IMAGE_SCRATCH, MODEL_REWARD_PREDICTION, MODEL_IMAGE_RECONSTRUCTION
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -50,13 +49,13 @@ end for
 
 """
 
-#############################################################################
+##########################################################################################################################################################
 ##@time     : 
 ##@author   : Zhefei Gong
 ##@func     : 
 ##@notice   : Continuous actions are usually considerd to be independent 
 ##@resource : [DiagGaussianDistribution](https://stable-baselines3.readthedocs.io/en/master/_modules/stable_baselines3/common/distributions.html#DiagGaussianDistribution)
-#############################################################################
+##########################################################################################################################################################
 
 class DiagGaussianDistribution:
     def __init__(self, action_dim):
@@ -86,79 +85,130 @@ class DiagGaussianDistribution:
     def sample(self) -> torch.Tensor:
         return self.distribution.rsample()
 
-#############################################################################
+##########################################################################################################################################################
 ##@time   : 
 ##@author : Zhefei Gong
 ##@func   : 
-#############################################################################
+##########################################################################################################################################################
 class MODEL_ACTOR_CRITIC(nn.Module):
     def __init__(self, 
                  observation_space, 
                  action_space,
-                 mode = 'oracle', 
-                 latent_size=32,
-                 output_size=64):
+                 spec):
+        
         super(MODEL_ACTOR_CRITIC, self).__init__()
         
         self.observation_space = observation_space
         self.action_space = action_space
 
-        # self.resolution_size = observation_space.shape[0] # resolution -> 64
-        # self.resolution_channels = 1
+        self.latent_size_net = spec.latent_size_net                         # --> 32
+        self.output_size_policy = spec.output_size_policy                   # --> 64
+        self.output_size_value = spec.output_size_value                     # --> 1
 
-        self.latent_size = latent_size                  # --> 32
-        self.output_size = output_size                  # --> 64
-        self.output_size_value = 1                      # --> 1
+        self.action_dim = action_space.shape[0]              # --> 2
 
-        self.action_dim = action_space.shape[0] # 2
+        self.mode = spec.mode
 
-        self.mode = mode
+        self.is_finetune = True
 
-        # ENCODER
-        if self.mode == 'oracle':
-            self.encoder = MODEL_ORACLE(dim=observation_space.shape[0])
+        self.reward_w_path = spec.reward_w_path
+        self.reconstruction_w_path = spec.reconstruction_w_path
+        
+        self.input_resolution = spec.input_resolution
+        self.input_channels = spec.input_channels
+        self.cnn_latent_channels = spec.cnn_latent_channels
+        self.output_channels = spec.output_channels
+
+        # =================================
+        # ============ ENCODER ============
+        # =================================
+
+        # cnn
+        if self.mode == 'cnn':
+            self.encoder = MODEL_CNN(input_resolution = self.input_resolution,
+                                     input_channels = self.input_channels,
+                                     latent_channels = self.cnn_latent_channels)
+        # scratch
+        elif self.mode == 'image_scratch':
+            self.encoder = MODEL_IMAGE_SCRATCH(input_resolution = self.input_resolution,
+                                               input_channels = self.input_channels,
+                                               output_channels = self.output_channels)            
+        # image
+        elif self.mode == 'image_reconstruction':
+            self.is_finetune = False
+            self.encoder = MODEL_IMAGE_RECONSTRUCTION(w_path = self.reconstruction_w_path, 
+                                                      is_finetune = self.is_finetune,
+                                                      input_resolution = self.input_resolution,
+                                                      input_channels = self.input_channels,
+                                                      output_channels = self.output_channels,)
+        elif self.mode == 'image_reconstruction_finetune':
+            self.encoder = MODEL_IMAGE_RECONSTRUCTION(w_path = self.reconstruction_w_path, 
+                                                      is_finetune = self.is_finetune,
+                                                      input_resolution = self.input_resolution,
+                                                      input_channels = self.input_channels,
+                                                      output_channels = self.output_channels,)
+        # reward
+        elif self.mode == 'reward_prediction':
+            self.is_finetune = False
+            self.encoder = MODEL_REWARD_PREDICTION(w_path = self.reward_w_path, 
+                                                   is_finetune = self.is_finetune,
+                                                   input_resolution = self.input_resolution,
+                                                   input_channels = self.input_channels,
+                                                   output_channels = self.output_channels)
+        elif self.mode == 'reward_prediction_finetune':
+            self.encoder = MODEL_REWARD_PREDICTION(w_path = self.reward_w_path, 
+                                                   is_finetune = self.is_finetune,
+                                                   input_resolution = self.input_resolution,
+                                                   input_channels = self.input_channels,
+                                                   output_channels = self.output_channels)
+        # oracle
         else:
             self.encoder = MODEL_ORACLE(dim=observation_space.shape[0])
+        
+        # Weight Initialization
+        self.encoder.w_init()    
 
         # POLICY <<-->> OUTPUT{[N,32]} 
         self.policy_net = nn.Sequential(
-            nn.Linear(self.encoder.output_size, self.latent_size), # 64 <<-->> 32
+            nn.Linear(self.encoder.output_size, self.latent_size_net),  # 64 <<-->> 32 / 64(CNN)
             nn.ReLU(),
-            nn.Linear(self.latent_size, self.output_size) # 32 <<-->> 64
+            nn.Linear(self.latent_size_net, self.output_size_policy)    # 32 / 64(CNN) <<-->> [N,64]
         )
 
         # VLAUE <<-->> OUTPUT{[N,1]}
         self.value_net = nn.Sequential(
-            nn.Linear(self.encoder.output_size, self.latent_size), # 64 <<-->> 64
+            nn.Linear(self.encoder.output_size, self.latent_size_net),  # 64 <<-->> 32 / 64(CNN)
             nn.ReLU(),
-            nn.Linear(self.latent_size, self.output_size_value) # 64 <<-->> 1
+            nn.Linear(self.latent_size_net, self.output_size_value)     # 32 / 64(CNN) <<-->> [N,1]
         )
 
         # Distribution for Action <<--->> Initialization
         self.action_distribution = DiagGaussianDistribution(self.action_dim)
 
         # nn.Linear / nn.parameter <<--->> Initialization
-        self.action_net, self.log_std = self.action_distribution.proba_distribution_net(latent_dim=self.output_size, log_std_init=0.0)
+        self.action_net, self.log_std = self.action_distribution.proba_distribution_net(latent_dim=self.output_size_policy, log_std_init=0.0)
 
     #@func : 
     def w_init(self):
-        for module in self.modules():
-            if isinstance(module, nn.Conv2d):
-                # Conv2d - fan_in
-                nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)  # bias
-            elif isinstance(module, nn.ConvTranspose2d):
-                # Conv2d - fan_in
-                nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)  # bias
-            elif isinstance(module, nn.Linear):
+        # encoder
+        self.encoder.w_init()
+
+        # policy_net
+        for module in self.policy_net():
+            if isinstance(module, nn.Linear):
                 # Linear - fan_out
                 nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)  # bias
-    
+        
+        # value_net
+        for module in self.value_net():
+            if isinstance(module, nn.Linear):
+                # Linear - fan_out
+                nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)  # bias
+        
     #@func : 
     def forward(self):
         raise NotImplementedError
@@ -173,6 +223,12 @@ class MODEL_ACTOR_CRITIC(nn.Module):
 
         # calculate
         latent_representation = self.encoder(observation)    
+
+        # Freeze or Not
+        if self.is_finetune == False:
+            # print("[INFO] FREEZE !!!")
+            latent_representation = latent_representation.detach()
+        
         policy_output = self.policy_net(latent_representation)
         value_output = self.value_net(latent_representation)
         
@@ -190,12 +246,18 @@ class MODEL_ACTOR_CRITIC(nn.Module):
 
         # if isinstance(observation, np.ndarray):
         #     obs = torch.tensor(observation, dtype=torch.float)
-
+        
         # observation - [N,64,64]
         # action - [N,2]
         
         # calculate
         latent_representation = self.encoder(observation)
+        
+        # Freeze or Not
+        if self.is_finetune == False:
+            # print("[INFO] FREEZE !!!")
+            latent_representation = latent_representation.detach()
+        
         policy_output = self.policy_net(latent_representation)
         value_output = self.value_net(latent_representation)
 
@@ -208,11 +270,11 @@ class MODEL_ACTOR_CRITIC(nn.Module):
         return value_output, action_sample_log_prob, distribution.entropy()
 
 
-#############################################################################
+##########################################################################################################################################################
 ##@time   : 
 ##@author : Zhefei Gong
 ##@func   : 
-#############################################################################
+##########################################################################################################################################################
 
 class ROLLOUT_BUFFER:
     def __init__(self):
@@ -258,11 +320,11 @@ end for
 
 """
 
-#############################################################################
+##########################################################################################################################################################
 ##@time   : 
 ##@author : Zhefei Gong
 ##@func   : 
-#############################################################################
+##########################################################################################################################################################
 class MODEL_PPO(nn.Module):
     
     #@func : 
@@ -282,7 +344,6 @@ class MODEL_PPO(nn.Module):
         self.num_timestep_per_episode = spec.num_timestep_per_episode
         self.input_channels = spec.input_channels
         self.normalization_bias = spec.normalization_bias
-        self.latent_size = spec.latent_size
         self.mode = spec.mode
 
         self.is_oracle = (self.mode == 'oracle')
@@ -306,9 +367,7 @@ class MODEL_PPO(nn.Module):
         # INIT 
         self.agent = MODEL_ACTOR_CRITIC(observation_space=self.observation_space, 
                                         action_space=self.action_space,
-                                        mode = self.mode, 
-                                        latent_size=self.latent_size
-                                        )
+                                        spec=spec)
 
         self.buffer = ROLLOUT_BUFFER()
     
@@ -353,7 +412,7 @@ class MODEL_PPO(nn.Module):
             self.buffer.RTGs = self.buffer.RTGs.view(self.count_timestep_per_batch, -1) #[N,]
             self.buffer.RTGs = (self.buffer.RTGs - self.buffer.RTGs.mean()) / (self.buffer.RTGs.std() + self.normalization_bias)
         
-        # print("[AT]",self.buffer.RTGs.shape) # [N,1]
+        # print("[RTGs]",self.buffer.RTGs.shape) # [N,1]
 
     #@func : 
     def compute_advantage_estimate(self):
@@ -386,11 +445,11 @@ class MODEL_PPO(nn.Module):
 
                 # ACTOR
                 with torch.no_grad():
-                    self.buffer.observations.append(observation)                     # [64,64]
+                    self.buffer.observations.append(observation)                     # [64,64] / [4,]
                     action, action_log_prob, _ = self.agent.actor(observation)   # [N,2], [N,1], _
                 
                 # environment transform
-                observation, reward, done, _ = self.env.step(action)
+                observation, reward, done, _ = self.env.step(action) # [64,64] / [4,] , [1,], [1,]
 
                 # EXPEND episode_rewards
                 episode_rewards.append(reward)
@@ -421,14 +480,14 @@ class MODEL_PPO(nn.Module):
         self.buffer.log_probs = torch.tensor(torch.stack(self.buffer.log_probs,dim=0), dtype=torch.float32)
         self.buffer.log_probs = self.buffer.log_probs.view(self.count_timestep_per_batch, 1) # [N, 1]
 
-        # print(self.buffer.observations.shape) # [N, -]
-        # print(self.buffer.actions.shape) # [N,2]
+        # print(self.buffer.observations.shape) # [N, -] / [N,1,64,64]
+        # print(self.buffer.actions.shape) # [N,2] 
         # print(self.buffer.log_probs.shape) # [N,1]
 
     #@func : 
     def update(self):
 
-        values, actions_log_probs, dist_entropy = self.agent.critic(self.buffer.observations, self.buffer.actions)
+        values, actions_log_probs, dist_entropy = self.agent.critic(self.buffer.observations, self.buffer.actions)        
         values = values.view(-1,1) # [N,1]
 
         ratios = torch.exp(actions_log_probs - self.buffer.log_probs) # [N,1] - [N,1] <<-->> \pi_{\theta} / \pi_{\theta_{old}}

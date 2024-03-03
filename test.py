@@ -16,7 +16,7 @@ def TEST_sprites_dataset():
         max_seq_len=30,             # the length of the sequence
         max_speed=0.05,             # total image range [0, 1]
         obj_size=0.2,               # size of objects, full images is 1.0
-        shapes_per_traj=1,          # number of shapes per trajectory
+        shapes_per_traj=2,          # number of shapes per trajectory
         rewards=[ZeroReward, AgentXReward],
     )
     gen = DistractorTemplateMovingSpritesGenerator(spec)
@@ -76,9 +76,9 @@ def TEST_sprites_env():
 
 if __name__ == "__main__":
 
-    # TEST_sprites_dataset()
+    TEST_sprites_dataset()
 
-    TEST_sprites_env()
+    # TEST_sprites_env()
     
     # import gym
     # env = gym.make('Sprites-v1')

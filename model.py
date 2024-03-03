@@ -14,7 +14,6 @@ import math
 ##@func   : encode the trajectory images into the trajectory vectors
 #############################################################################
 class ENCODER(nn.Module):
-    
     #
     def __init__(self, input_resolution = 64, input_channels = 1, output_channels=64):
         super(ENCODER,self).__init__() # initialize the father class
@@ -255,57 +254,49 @@ class MODEL_REWARD_PRD(nn.Module):
 ##@func   : 
 ##################################################
 class MODEL_IMAGE_REC(nn.Module):
-    def __init__(self):
-        super().__init__()
+    #
+    def __init__(self,
+                 resolution = 64,
+                 image_channels = 1,
+                 latent_size = 64):
+        super(MODEL_IMAGE_REC, self).__init__()
+        
+        self.image_resolution = resolution
+        self.image_channels = image_channels
+        self.latent_size = latent_size
 
-    
-    def forward(self):
-        pass
+        self.encoder = ENCODER(input_resolution = self.image_resolution, 
+                               input_channels = self.image_channels, 
+                               output_channels = self.latent_size)
+        
+        self.decoder = DECODER(input_channels = self.latent_size, 
+                               output_resolution = self.image_resolution, 
+                               output_channels = self.image_channels)
 
-##################################################
-##@time   : 
-##@author : Zhefei Gong
-##@func   : 
-##################################################
-class MODEL_CNN(nn.Module):
-    def __init__(self):
-        super(MODEL_CNN, self).__init__()
+    #
+    def forward(self, images):
+        x = self.encoder(images)
+        images_rec = self.decoder(x)
+        return images_rec
 
-    def forward(self):
-        pass
-
+    #
     def w_init(self):
-        pass
-
-##################################################
-##@time   : 
-##@author : Zhefei Gong
-##@func   : 
-##################################################
-class MODEL_IMAGE_SCRATCH(nn.Module):
-    def __init__(self):
-        super(MODEL_IMAGE_SCRATCH, self).__init__()
-
-    def forward(self):
-        pass
-
-    def w_init(self):
-        pass
-
-##################################################
-##@time   : 
-##@author : Zhefei Gong
-##@func   : 
-##################################################
-class MODEL_ACTOR_CRITIC(nn.Module):
-    def __init__(self):
-        super(MODEL_ACTOR_CRITIC, self).__init__()
-
-    def forward(self):
-        pass
-
-    def w_init(self):
-        pass
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                # Conv2d - fan_in
+                nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)  # bias
+            elif isinstance(module, nn.ConvTranspose2d):
+                # ConvTranspose2d - fan_in
+                nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)  # bias
+            elif isinstance(module, nn.Linear):
+                # Linear - fan_out
+                nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)  # bias
 
 
 

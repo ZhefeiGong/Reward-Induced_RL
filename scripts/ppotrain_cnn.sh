@@ -1,8 +1,8 @@
 python ./ppo_train.py \
---mode 'oracle' \
+--mode 'cnn' \
 --num_distractors 0 \
 --wandb_project 'baseline' \
---wandb_exp 'oracle-run2' \
+--wandb_exp 'cnn-run1' \
 --num_timestep_total 50000 \
 --num_timestep_per_batch 400 \
 --num_timestep_per_episode 40 \
@@ -15,7 +15,7 @@ python ./ppo_train.py \
 --coef_entropy_loss 0.01 \
 --learning_rate_ppo 3e-4 \
 --max_grad_norm 0.5 \
---latent_size_net 32 \
+--latent_size_net 64 \
 --input_resolution 64 \
 --cnn_latent_channels 16 \
 --output_channels 64 \
