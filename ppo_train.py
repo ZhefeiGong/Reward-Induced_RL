@@ -7,6 +7,7 @@ import wandb
 
 import gym
 import torch
+from tqdm import tqdm
 import torch.nn as nn
 import argparse
 from general_utils import AttrDict
@@ -16,8 +17,16 @@ from ppo import MODEL_PPO
 #@func : 
 def train_ppo(args):
 
+    # WANDB
+    if args.is_use_wandb:
+        wandb.init(project=args.wandb_project, 
+                name=args.wandb_exp,
+                config=args)
+
     # PARA
     num_timestep_total = args.num_timestep_total
+    num_timestep_per_batch = args.num_timestep_per_batch
+    num_timestep_per_episode = args.num_timestep_per_episode
     num_update_per_batch = args.num_update_per_batch
     learning_rate_ppo = args.learning_rate_ppo
     max_grad_norm = args.max_grad_norm
@@ -26,7 +35,7 @@ def train_ppo(args):
     count_timestep_total = 0
 
     # ENV
-    env_id = f"{'SpritesState' if args.baseline_name == 'oracle' else 'Sprites'}-v{args.num_distractors}"
+    env_id = f"{'SpritesState' if args.mode == 'oracle' else 'Sprites'}-v{args.num_distractors}"
     env = gym.make(env_id)
 
     # MODEL
@@ -50,14 +59,20 @@ def train_ppo(args):
     optimizer = torch.optim.Adam(ppo_agent.agent.parameters(), lr=learning_rate_ppo)
 
     # TRAIN
+    pbar = tqdm(total=int((num_timestep_total + num_timestep_per_batch - 1 )  / num_timestep_per_batch), desc="Training Progress")
+
     while count_timestep_total < num_timestep_total:
+        
+        # INIT
+        avg_reward_per_batch = 0
+        avg_loss_per_batch = 0
         
         # ACTOR
         with torch.no_grad():
             ppo_agent.rollout()
             ppo_agent.compute_RTGs()
-            ppo_agent.compute_advantage_estimate
-            count_timestep_total += ppo_agent.count_timestep_per_batch
+            ppo_agent.compute_advantage_estimate()
+            count_timestep_total += ppo_agent.count_timestep_per_batch        
 
         # CRITIC
         with torch.enable_grad():
@@ -65,12 +80,28 @@ def train_ppo(args):
                 optimizer.zero_grad()
                 loss = ppo_agent.update()
                 loss.backward()
-                nn.utils.clip_grad_norm_(ppo_agent.agent.parameters(), max_grad_norm)
+                avg_loss_per_batch += loss.item()
+                nn.utils.clip_grad_norm_(ppo_agent.agent.parameters(), max_grad_norm) # 
                 optimizer.step()
         
+        # tqdm
+        sum_rewards = sum([item for sublist in ppo_agent.buffer.rewards for item in sublist])
+        avg_reward_per_batch = sum_rewards / ppo_agent.count_timestep_per_batch * num_timestep_per_episode
+        avg_loss_per_batch = avg_loss_per_batch / num_update_per_batch
+        pbar.update(1)
+        pbar.set_postfix({'reward': avg_reward_per_batch, 'loss': avg_loss_per_batch})
+
+        # WANDB
+        if args.is_use_wandb:
+            wandb.log({"reward": avg_reward_per_batch}, step=count_timestep_total)
+            wandb.log({'loss': avg_loss_per_batch}, step=count_timestep_total)
+
         # CLEAR
         ppo_agent.buffer_clear()
 
+    pbar.close()
+    if args.is_use_wandb:
+        wandb.finish()
 
 #############################################
 ##
@@ -108,7 +139,7 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_dim', type=int, default=64, help="[NOTICE] ")
     parser.add_argument('--mlp_hidden_units',type=int, default=32, help="[NOTICE] ")
     parser.add_argument('--lstm_num_layers', type=int, default=1, help="[NOTICE] ")
-    parser.add_argument('--gpus', type=int, default=0, help="[NOTICE] ")
+    parser.add_argument('--gpus', type=int, default=0, help="[NOTICE] ") # Not Supporting Multiple GPUs (GPUs = 1 or 0)
     
     # DATA
     parser.add_argument('--resolution', type=int, default=64, help="[NOTICE] ")
@@ -124,7 +155,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_timestep_per_batch', type=int, default=2048, help="[NOTICE] ")
     parser.add_argument('--num_timestep_per_episode', type=int, default=40, help="[NOTICE] ")
     parser.add_argument('--num_update_per_batch', type=int, default=10, help="[NOTICE] ")
-    parser.add_argument('--normalization_bias', type=int, default=1e-9, help="[NOTICE] ")
+    parser.add_argument('--normalization_bias', type=float, default=1e-9, help="[NOTICE] ")
     parser.add_argument('--latent_size', type=int, default=64, help="[NOTICE] ")
     parser.add_argument('--r_gamma', type=float, default=0.95, help="[NOTICE] ")
     parser.add_argument('--clip_epsilon', type=float, default=0.2, help="[NOTICE] ")

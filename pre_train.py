@@ -86,7 +86,7 @@ def train_reward_prediction_model(args):
                 # print("[shape]shape_idxs: ", batch.shape_idxs.shape)     # [0 1 2 3 ...]
                 # print("[shape]images : ", batch.images.shape)            # [0 255]
                 # print("[shape]rewards : ", batch.rewards[_rewards[0].NAME].shape)  # rewards
-
+                
                 x = torch.squeeze(batch.images, dim=0) # [1, T, C, H, W] -> [T, C, H, W]
                 # [**] Use the first N frames [**]cle   
                 x = x[:args.max_cond_frame_len, :, :, :] # [T(0-N~T), C, H, W]
@@ -153,6 +153,7 @@ def train_reward_prediction_model(args):
 #############################################
 def train_image_reconstruction_decoder(args):
 
+    # WANDB
     if args.is_use_wandb:
         wandb.init(project=args.wandb_project, 
                 name=args.wandb_exp,

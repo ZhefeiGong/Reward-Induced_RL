@@ -4,14 +4,17 @@
 #@notice : 
 
 import torch
+import warnings
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Normal
 from general_utils import sum_independent_dims
 
-
+from sprites_env.envs.sprites import SpritesEnv, SpritesStateEnv
 from baseline import MODEL_ORACLE
 
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 """
 @intro : the pseudocode of Actor-Critic Style
@@ -93,46 +96,50 @@ class MODEL_ACTOR_CRITIC(nn.Module):
                  observation_space, 
                  action_space,
                  mode = 'oracle', 
-                 latent_size=64):
+                 latent_size=32,
+                 output_size=64):
         super(MODEL_ACTOR_CRITIC, self).__init__()
         
         self.observation_space = observation_space
         self.action_space = action_space
 
-        self.input_size = observation_space.shape[0] # resolution -> 64
-        self.latent_size = latent_size
+        # self.resolution_size = observation_space.shape[0] # resolution -> 64
+        # self.resolution_channels = 1
+
+        self.latent_size = latent_size                  # --> 32
+        self.output_size = output_size                  # --> 64
+        self.output_size_value = 1                      # --> 1
 
         self.action_dim = action_space.shape[0] # 2
-        self.value_dim = 1
 
         self.mode = mode
 
         # ENCODER
         if self.mode == 'oracle':
-            self.encoder = MODEL_ORACLE()
+            self.encoder = MODEL_ORACLE(dim=observation_space.shape[0])
         else:
-            self.encoder = MODEL_ORACLE()
+            self.encoder = MODEL_ORACLE(dim=observation_space.shape[0])
 
-        # POLICY <<-->> OUTPUT
+        # POLICY <<-->> OUTPUT{[N,32]} 
         self.policy_net = nn.Sequential(
-            nn.Linear(self.input_size, self.latent_size),
+            nn.Linear(self.encoder.output_size, self.latent_size), # 64 <<-->> 32
             nn.ReLU(),
-            nn.Linear(self.latent_size, self.latent_size)
+            nn.Linear(self.latent_size, self.output_size) # 32 <<-->> 64
         )
 
-        # VLAUE <<-->> OUTPUT
+        # VLAUE <<-->> OUTPUT{[N,1]}
         self.value_net = nn.Sequential(
-            nn.Linear(self.input_size, self.latent_size),
+            nn.Linear(self.encoder.output_size, self.latent_size), # 64 <<-->> 64
             nn.ReLU(),
-            nn.Linear(self.latent_size, self.value_dim)
+            nn.Linear(self.latent_size, self.output_size_value) # 64 <<-->> 1
         )
 
         # Distribution for Action <<--->> Initialization
         self.action_distribution = DiagGaussianDistribution(self.action_dim)
 
         # nn.Linear / nn.parameter <<--->> Initialization
-        self.action_net, self.log_std = self.action_distribution.proba_distribution_net(latent_dim=self.latent_size, log_std_init=0.0)
-    
+        self.action_net, self.log_std = self.action_distribution.proba_distribution_net(latent_dim=self.output_size, log_std_init=0.0)
+
     #@func : 
     def w_init(self):
         for module in self.modules():
@@ -162,19 +169,19 @@ class MODEL_ACTOR_CRITIC(nn.Module):
         # if isinstance(observation, np.ndarray):
         #     obs = torch.tensor(observation, dtype=torch.float)
 
-        # observation - [N,64,64]
-        
+        # observation - [N,1,64,64]
+
         # calculate
         latent_representation = self.encoder(observation)    
         policy_output = self.policy_net(latent_representation)
         value_output = self.value_net(latent_representation)
-
+        
         # sample the next action
         action_mean = self.action_net(policy_output)
         distribution = self.action_distribution.proba_distribution(action_mean, self.log_std)
 
-        action_sample = distribution.sample()
-        action_sample_log_prob = distribution.log_prob(action_sample)
+        action_sample = distribution.sample().view(-1, self.action_dim) # [N,2]
+        action_sample_log_prob = distribution.log_prob(action_sample).view(-1,1)  # [N, 1]
         
         return action_sample.detach(), action_sample_log_prob.detach(), value_output.detach() # DETACH
     
@@ -186,7 +193,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
 
         # observation - [N,64,64]
         # action - [N,2]
-
+        
         # calculate
         latent_representation = self.encoder(observation)
         policy_output = self.policy_net(latent_representation)
@@ -196,7 +203,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
         distribution = self.action_distribution.proba_distribution(action_mean, self.log_std)
 
         action_sample = action.view(-1, self.action_dim) # [N,2]
-        action_sample_log_prob = distribution.log_prob(action_sample).view(-1, 1)
+        action_sample_log_prob = distribution.log_prob(action_sample).view(-1, 1) # [N, 1]
 
         return value_output, action_sample_log_prob, distribution.entropy()
 
@@ -220,19 +227,22 @@ class ROLLOUT_BUFFER:
     
     def clear(self):
 
-        del self.actions[:]       # [N,2]
-        del self.observations[:]  # [N,64,64]
-        del self.log_probs[:]     # [N,2]
-        del self.RTGs[:]          # [N,]
-        del self.At[:]            # [N,]
+        del self.actions       # [N,2]
+        del self.observations  # [N,64,64]
+        del self.log_probs     # [N,2]
+        del self.RTGs          # [N,]
+        del self.At            # [N,]
 
-        del self.rewards[:]       # [N,[list]] * 
+        del self.rewards       # [N,[list]] * 
+
+        self.__init__()
         
 
 """
 @intro : the pseudocode of PPO, Actor-Critic Style
 @refer : cite from paper [ppo](https://arxiv.org/abs/1707.06347)
 @refer : code refer from [PPO-Pytorch](https://github.com/nikhilbarhate99/PPO-PyTorch/tree/master)
+@refer : code refer from [cleanrl](https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo_continuous_action.py)
 
 for iteration=1,2,... do
     
@@ -253,13 +263,14 @@ end for
 ##@author : Zhefei Gong
 ##@func   : 
 #############################################################################
-class MODEL_PPO:
+class MODEL_PPO(nn.Module):
     
     #@func : 
     def __init__(self, 
                  env,
                  spec
                  ):
+        super(MODEL_PPO, self).__init__()
         
         # COUNT
         self.count_timestep_total = 0
@@ -273,6 +284,8 @@ class MODEL_PPO:
         self.normalization_bias = spec.normalization_bias
         self.latent_size = spec.latent_size
         self.mode = spec.mode
+
+        self.is_oracle = (self.mode == 'oracle')
 
         # PARA
         self.r_gamma = spec.r_gamma
@@ -298,8 +311,11 @@ class MODEL_PPO:
                                         )
 
         self.buffer = ROLLOUT_BUFFER()
-
     
+    #@func : 
+    def forward(self):
+        pass
+
     #@func : 
     def w_init(self):
         for module in self.modules():
@@ -309,7 +325,7 @@ class MODEL_PPO:
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)  # bias
             elif isinstance(module, nn.ConvTranspose2d):
-                # Conv2d - fan_in
+                # ConvTranspose2d - fan_in
                 nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)  # bias
@@ -325,8 +341,6 @@ class MODEL_PPO:
         
     #@func : 
     def compute_RTGs(self):
-
-        # RTGs
         with torch.no_grad():
             # Calculate
             for episode_rewards in reversed(self.buffer.rewards):
@@ -334,24 +348,27 @@ class MODEL_PPO:
                 for reward in reversed(episode_rewards):
                     discounted_reward = self.r_gamma * discounted_reward + reward
                     self.buffer.RTGs.insert(0, discounted_reward)
-
-        # RTGs [Normalizing]
-        self.buffer.RTGs = torch.tensor(self.buffer.RTGs, dtype=torch.float32)
-        self.buffer.RTGs = self.buffer.RTGs.view(self.count_timestep_per_batch, -1)
-        self.buffer.RTGs = (self.buffer.RTGs - self.buffer.RTGs.mean()) / (self.buffer.RTGs.std() + self.normalization_bias)
+            # RTGs [Normalizing]
+            self.buffer.RTGs = torch.tensor(self.buffer.RTGs, dtype=torch.float32)
+            self.buffer.RTGs = self.buffer.RTGs.view(self.count_timestep_per_batch, -1) #[N,]
+            self.buffer.RTGs = (self.buffer.RTGs - self.buffer.RTGs.mean()) / (self.buffer.RTGs.std() + self.normalization_bias)
+        
+        # print("[AT]",self.buffer.RTGs.shape) # [N,1]
 
     #@func : 
     def compute_advantage_estimate(self):
         with torch.no_grad():
             values, _, _ = self.agent.critic(self.buffer.observations, self.buffer.actions)
-            values = values.view(-1)
+            values = values.view(-1, 1) # [N, 1]
             self.buffer.At = self.buffer.RTGs - values
             self.buffer.At = (self.buffer.At - self.buffer.At.mean()) / (self.buffer.At.std() + self.normalization_bias)
+        
+        # print("[AT]",self.buffer.At.shape) # [N,1]
 
     #@func : 
     def rollout(self):
-
-        count_timestep_per_episode = 0
+        
+        # init
         self.count_timestep_per_batch = 0
 
         # batch
@@ -359,6 +376,7 @@ class MODEL_PPO:
 
             observation = self.env.reset()
             episode_rewards = []
+            count_timestep_per_episode = 0
 
             # episode
             while count_timestep_per_episode < self.num_timestep_per_episode : 
@@ -369,15 +387,15 @@ class MODEL_PPO:
                 # ACTOR
                 with torch.no_grad():
                     self.buffer.observations.append(observation)                     # [64,64]
-                    action, action_log_prob, _ = self.agent.actor(observation)   # [2] / [2] / [1]
+                    action, action_log_prob, _ = self.agent.actor(observation)   # [N,2], [N,1], _
                 
                 # environment transform
                 observation, reward, done, _ = self.env.step(action)
 
-                # 
+                # EXPEND episode_rewards
                 episode_rewards.append(reward)
 
-                # 
+                # EXPEND buffer 
                 self.buffer.actions.append(action)
                 self.buffer.log_probs.append(action_log_prob)
 
@@ -390,36 +408,43 @@ class MODEL_PPO:
 
         # Observations
         self.buffer.observations = torch.tensor(self.buffer.observations, dtype=torch.float32)
-        self.buffer.observations = self.buffer.observations.view(self.count_timestep_per_batch,self.input_channels,self.input_resolution,self.input_resolution)
+        if self.is_oracle:
+            self.buffer.observations = self.buffer.observations.view(self.count_timestep_per_batch,self.input_resolution) # [N,D]
+        else:
+            self.buffer.observations = self.buffer.observations.view(self.count_timestep_per_batch,self.input_channels,self.input_resolution,self.input_resolution) # [N,C,H,W]
+        
         # Actions
-        self.buffer.actions = torch.tensor(self.buffer.actions, dtype=torch.float32)
-        self.buffer.actions = self.buffer.actions.view(self.count_timestep_per_batch, self.action_dim)
-        # Log_probs
-        self.buffer.log_probs = torch.tensor(self.buffer.log_probs, dtype=torch.float32)
-        self.buffer.log_probs = self.buffer.log_probs.view(self.count_timestep_per_batch, self.action_dim)
+        self.buffer.actions = torch.tensor(torch.stack(self.buffer.actions,dim=0), dtype=torch.float32)
+        self.buffer.actions = self.buffer.actions.view(self.count_timestep_per_batch, self.action_dim) # [N, 2]
 
-        # RTGs ...
+        # Log_probs
+        self.buffer.log_probs = torch.tensor(torch.stack(self.buffer.log_probs,dim=0), dtype=torch.float32)
+        self.buffer.log_probs = self.buffer.log_probs.view(self.count_timestep_per_batch, 1) # [N, 1]
+
+        # print(self.buffer.observations.shape) # [N, -]
+        # print(self.buffer.actions.shape) # [N,2]
+        # print(self.buffer.log_probs.shape) # [N,1]
 
     #@func : 
     def update(self):
 
         values, actions_log_probs, dist_entropy = self.agent.critic(self.buffer.observations, self.buffer.actions)
-        
-        values = values.view(-1)
-        
-        ratios = torch.exp(actions_log_probs - self.buffer.log_probs)
-        ratios = ratios.view(-1)
-        
-        surr1 = ratios * self.buffer.At
-        surr2 = torch.clamp(ratios, 1 - self.clip_epsilon, 1 + self.clip_epsilon) * self.buffer.At
-        
-        policy_loss = - torch.min(surr1, surr2).mean()
-        value_loss = F.mse_loss(self.buffer.RTGs, values)
-        entropy_loss = -torch.mean(dist_entropy)
-        
-        total_loss = self.coef_value_loss * value_loss + policy_loss + self.coef_entropy_loss * entropy_loss
+        values = values.view(-1,1) # [N,1]
 
-        return total_loss
+        ratios = torch.exp(actions_log_probs - self.buffer.log_probs) # [N,1] - [N,1] <<-->> \pi_{\theta} / \pi_{\theta_{old}}
+        ratios = ratios.view(-1,1) # [N,1]
+        
+        surr1 = ratios * self.buffer.At # [N,1] * [N,1]
+        surr2 = torch.clamp(ratios, 1 - self.clip_epsilon, 1 + self.clip_epsilon) * self.buffer.At # [N,1] * [N,1]
+        
+        policy_loss = - torch.min(surr1, surr2).mean()  # [N,1] <-> num <<-->> MAX
+        value_loss = F.mse_loss(self.buffer.RTGs, values) # [N,1] <-> num <<-->> MIN
+        entropy_loss = -torch.mean(dist_entropy) # [N,1] <-> num <<-->> MAX(exploration)
+        
+        # LOSS = VALUE_LOSS + POLICY_LOSS + ENTROPY_LOSS
+        loss = self.coef_value_loss * value_loss + policy_loss + self.coef_entropy_loss * entropy_loss
+        
+        return loss
     
 
 if __name__ == "__main__":

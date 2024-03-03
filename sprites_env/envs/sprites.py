@@ -38,7 +38,7 @@ class SpritesEnv(gym.Env):
         self._sprite_res = int(self.obj_size * self.resolution)
         self._shape_sprites = self._get_shape_sprites()  # generate geometric shape templates
         self._template_blender = TemplateBlender((self.resolution, self.resolution))
-
+        
         # images
         self.observation_space = Box(low=0.0, high=1.0,
                 shape=(self.resolution, self.resolution),
