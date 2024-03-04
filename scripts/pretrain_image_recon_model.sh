@@ -21,8 +21,9 @@ python ./pre_train.py \
 --obj_size 0.2 \
 --shapes_per_traj 2 \
 --rewards 'vertical_position' \
---is_weight_save \
---is_weight_save_best \
---is_use_wandb \
+
+# --is_weight_save \
+# --is_weight_save_best \
+# --is_use_wandb \
 
 # --rewards 'agent_x' 'agent_y' 'target_x' 'target_y' 'vertical_position' 'horizontal_position' \

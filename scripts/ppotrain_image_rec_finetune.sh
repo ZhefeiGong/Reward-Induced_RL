@@ -1,10 +1,10 @@
 python ./ppo_train.py \
 --mode 'image_reconstruction_finetune' \
 --num_distractors 0 \
---wandb_project 'baseline' \
+--wandb_project 'baseline-2M' \
 --wandb_exp 'image_reconstruction_finetune-run1' \
---num_timestep_total 50000 \
---num_timestep_per_batch 400 \
+--num_timestep_total 2000000 \
+--num_timestep_per_batch 2000 \
 --num_timestep_per_episode 40 \
 --num_update_per_batch 10 \
 --normalization_bias 1e-9 \
@@ -23,6 +23,8 @@ python ./ppo_train.py \
 --output_size_value 1 \
 --reward_w_path '' \
 --reconstruction_w_path './weights/fig3/rec/image-rec_encoder_[sh-2]_[trj-40]_[epo-200]_[size-100]-[rwd-vertical_position].pth' \
+--gpus_num 1 \
+--gpus_idx 4 \
 --is_use_wandb \
 
 # --num_timestep_total 5000000 \

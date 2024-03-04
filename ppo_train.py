@@ -19,6 +19,22 @@ from ppo import MODEL_PPO
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+def get_initial_params(model):
+    initial_params = {}
+    for name, param in model.named_parameters():
+        initial_params[name] = param.clone()
+    return initial_params
+
+def check_for_updates(initial_params, model):
+    for name, param in model.named_parameters():
+        
+        # print('[INIT]',initial_params[name],'-- [UPDATE]', param) # SHOW
+        
+        if not torch.equal(initial_params[name], param):
+            print(f"Parameter '{name}' was updated.")
+        else:
+            print(f"Parameter '{name}' was [NOT] updated.")
+
 #@func : 
 def train_ppo(args):
 
@@ -45,11 +61,12 @@ def train_ppo(args):
     learning_rate_ppo = args.learning_rate_ppo
     max_grad_norm = args.max_grad_norm
 
-    # INIT
+    # COUNT
     count_timestep_total = 0
 
     # ENV
     env_id = f"{'SpritesState' if args.mode == 'oracle' else 'Sprites'}-v{args.num_distractors}"
+
     env = gym.make(env_id)
 
     # MODEL
@@ -82,7 +99,10 @@ def train_ppo(args):
     )
 
     ppo_agent = MODEL_PPO(env=env, spec=_spec, device=device).to(device)
-    ppo_agent.w_init() # initialize the weights - 
+    ppo_agent.w_init() # initialize the weights -
+
+    # # ----- TEST -----
+    # init_encoder = get_initial_params(ppo_agent.agent) 
 
     # OPTIMIZER
     optimizer = torch.optim.Adam(ppo_agent.agent.parameters(), lr=learning_rate_ppo)
@@ -119,6 +139,9 @@ def train_ppo(args):
                 avg_loss_per_batch += loss.item()       # record
                 nn.utils.clip_grad_norm_(ppo_agent.agent.parameters(), max_grad_norm) # <<-->> clip
                 optimizer.step()                        # <<-->> optimize
+        
+        # # TEST
+        # check_for_updates(init_encoder,ppo_agent.agent)
         
         # tqdm
         sum_rewards = sum([item for sublist in ppo_agent.buffer.rewards for item in sublist])

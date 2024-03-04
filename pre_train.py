@@ -94,7 +94,10 @@ def train_reward_prediction_model(args):
                 x = torch.cat([x, torch.zeros((args.max_seq_len - args.max_cond_frame_len, x.size()[1], x.size()[2], x.size()[3]))])
                 
                 rewards_gt = torch.squeeze(torch.stack([torch.squeeze(batch.rewards[reward.NAME]) for reward in _rewards]))  # [N, T]
-                
+
+                # # NOTICE
+                # print(rewards_gt.shape)
+
                 rewards_pred = model(x)
 
                 loss = criterion(input=rewards_pred, target=rewards_gt)
@@ -412,7 +415,6 @@ def train_image_reconstruction_model(agrs):
     if args.is_use_wandb:
         wandb.finish()
 
-    
 
 #######################################################################################################################################
 ##

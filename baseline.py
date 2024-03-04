@@ -31,7 +31,6 @@ class MODEL_ORACLE(nn.Module):
         observation = observation.view(-1,self.output_size)
         return observation
 
-
 #############################################################################
 ##@time   : 
 ##@author : Zhefei Gong
@@ -94,7 +93,6 @@ class MODEL_CNN(nn.Module):
                 nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)  # bias
-
 
 #############################################################################
 ##@time   : 
@@ -164,7 +162,9 @@ class MODEL_REWARD_PREDICTION(nn.Module):
         self.output_channels = output_channels
         self.output_size = output_channels
 
-        self.encoder = ENCODER(self.input_resolution, self.input_channels, self.output_channels)
+        self.encoder = ENCODER(input_resolution=self.input_resolution, 
+                               input_channels=self.input_channels, 
+                               output_channels=self.output_channels)
 
         self.w_path = w_path
         self.is_finetune = is_finetune

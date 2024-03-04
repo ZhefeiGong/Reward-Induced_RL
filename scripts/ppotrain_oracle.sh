@@ -1,9 +1,9 @@
 python ./ppo_train.py \
 --mode 'oracle' \
 --num_distractors 0 \
---wandb_project 'baseline-gpu' \
+--wandb_project 'baseline-2M' \
 --wandb_exp 'oracle-run1' \
---num_timestep_total 1000000 \
+--num_timestep_total 2000000 \
 --num_timestep_per_batch 2000 \
 --num_timestep_per_episode 40 \
 --num_update_per_batch 10 \

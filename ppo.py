@@ -136,6 +136,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
         # image
         elif self.mode == 'image_reconstruction':
             self.is_finetune = False
+            # print('HERE-w/o')
             self.encoder = MODEL_IMAGE_RECONSTRUCTION(w_path = self.reconstruction_w_path, 
                                                       is_finetune = self.is_finetune,
                                                       input_resolution = self.input_resolution,
@@ -143,6 +144,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
                                                       output_channels = self.output_channels,)
         elif self.mode == 'image_reconstruction_finetune':
             self.is_finetune = True
+            # print('HERE-w')
             self.encoder = MODEL_IMAGE_RECONSTRUCTION(w_path = self.reconstruction_w_path, 
                                                       is_finetune = self.is_finetune,
                                                       input_resolution = self.input_resolution,
@@ -151,6 +153,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
         # reward
         elif self.mode == 'reward_prediction':
             self.is_finetune = False
+            # print('HERE-w/o')
             self.encoder = MODEL_REWARD_PREDICTION(w_path = self.reward_w_path, 
                                                    is_finetune = self.is_finetune,
                                                    input_resolution = self.input_resolution,
@@ -158,6 +161,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
                                                    output_channels = self.output_channels)
         elif self.mode == 'reward_prediction_finetune':
             self.is_finetune = True
+            # print('HERE-w')
             self.encoder = MODEL_REWARD_PREDICTION(w_path = self.reward_w_path, 
                                                    is_finetune = self.is_finetune,
                                                    input_resolution = self.input_resolution,
@@ -168,7 +172,6 @@ class MODEL_ACTOR_CRITIC(nn.Module):
             self.is_finetune = True
             self.encoder = MODEL_ORACLE(dim=observation_space.shape[0])
 
-        
         # POLICY <<-->> OUTPUT{[N,32]} 
         self.policy_net = nn.Sequential(
             nn.Linear(self.encoder.output_size, self.latent_size_net),  # 64 <<-->> 32 / 64(CNN)
@@ -182,7 +185,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
             nn.ReLU(),
             nn.Linear(self.latent_size_net, self.output_size_value)     # 32 / 64(CNN) <<-->> [N,1]
         )
-
+        
         # Distribution for Action <<--->> Initialization
         self.action_distribution = DiagGaussianDistribution(self.action_dim)
 
