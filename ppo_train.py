@@ -11,8 +11,7 @@ from tqdm import tqdm
 import torch.nn as nn
 import numpy as np
 import argparse
-from general_utils import AttrDict
-from general_utils import make_gif
+from general_utils import AttrDict,make_gif,set_seed
 from ppo import MODEL_PPO
 
 #
@@ -37,7 +36,10 @@ def check_for_updates(initial_params, model):
 
 #@func : 
 def train_ppo(args):
-
+    
+    # SEED
+    set_seed(seed=42)
+    
     # GPUs
     if args.gpus_num > 0 and torch.cuda.is_available() and args.gpus_idx < torch.cuda.device_count(): 
         device = torch.device(f"cuda:{args.gpus_idx}")
