@@ -3,8 +3,8 @@ python ./ppo_train.py \
 --num_distractors 0 \
 --wandb_project 'baseline' \
 --wandb_exp 'oracle-run2' \
---num_timestep_total 50000 \
---num_timestep_per_batch 400 \
+--num_timestep_total 1000000 \
+--num_timestep_per_batch 2000 \
 --num_timestep_per_episode 40 \
 --num_update_per_batch 10 \
 --normalization_bias 1e-9 \
@@ -23,8 +23,9 @@ python ./ppo_train.py \
 --output_size_value 1 \
 --reward_w_path '' \
 --reconstruction_w_path '' \
---is_visual_traj \
-# --is_use_wandb \
+--is_use_wandb \
+
+# --is_visual_traj \
 
 # --num_timestep_total 5000000 \
 # --num_timestep_per_batch 2048 \

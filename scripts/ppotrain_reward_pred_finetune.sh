@@ -2,9 +2,9 @@ python ./ppo_train.py \
 --mode 'reward_prediction_finetune' \
 --num_distractors 0 \
 --wandb_project 'baseline' \
---wandb_exp 'reward_prediction_finetune-run1' \
---num_timestep_total 50000 \
---num_timestep_per_batch 400 \
+--wandb_exp 'reward_prediction_finetune-run2' \
+--num_timestep_total 1000000 \
+--num_timestep_per_batch 2000 \
 --num_timestep_per_episode 40 \
 --num_update_per_batch 10 \
 --normalization_bias 1e-9 \
@@ -23,8 +23,9 @@ python ./ppo_train.py \
 --output_size_value 1 \
 --reward_w_path 'weights/fig3/rwd_xyxy/reward-pred_encoder_[sh-2]_[trj-40]_[cf-5]_[epo-500]_[size-100]-[rwd-agent_x-agent_y-target_x-target_y].pth' \
 --reconstruction_w_path '' \
---is_visual_traj \
-# --is_use_wandb \
+--is_use_wandb \
+
+# --is_visual_traj \
 
 # --num_timestep_total 5000000 \
 # --num_timestep_per_batch 2048 \

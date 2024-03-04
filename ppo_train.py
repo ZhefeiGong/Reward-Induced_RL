@@ -5,6 +5,7 @@
 import gym
 import torch
 import wandb
+import warnings
 from tqdm import tqdm
 import torch.nn as nn
 import numpy as np
@@ -12,6 +13,11 @@ import argparse
 from general_utils import AttrDict
 from general_utils import make_gif
 from ppo import MODEL_PPO
+
+#
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 
 #@func : 
 def train_ppo(args):
@@ -92,7 +98,7 @@ def train_ppo(args):
             # SHOW the Figs([N,Resolution,Resolution])  
             if args.mode != 'oracle' and args.is_visual_traj is True:    
                 imgs = torch.squeeze(ppo_agent.buffer.observations[:num_timestep_per_episode,:,:,:],dim=1) # [N,1,R,R] <<-->> [N,R,R]
-                make_gif(imgs = np.array(imgs) * 255, path = "tmp/fig3/env.gif", fps_default=10)
+                make_gif(imgs = np.array(imgs) * 255, path = f"tmp/fig3/{args.mode}.gif", fps_default=10)
                 # print('[SAVING]', count_timestep_total)
 
         # CRITIC
@@ -111,7 +117,7 @@ def train_ppo(args):
         avg_loss_per_batch = avg_loss_per_batch / num_update_per_batch
         pbar.update(1)
         pbar.set_postfix({'reward': avg_reward_per_batch, 'loss': avg_loss_per_batch, 'save':(args.mode != 'oracle' and args.is_visual_traj is True)})
-        
+
         # WANDB
         if args.is_use_wandb:
             wandb.log({"reward": avg_reward_per_batch}, step=count_timestep_total)

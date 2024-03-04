@@ -4,16 +4,14 @@
 #@notice : 
 
 import torch
-import warnings
 import torch.nn as nn
+import numpy as np
 import torch.nn.functional as F
 from torch.distributions import Normal
 from general_utils import sum_independent_dims
 from sprites_env.envs.sprites import SpritesEnv, SpritesStateEnv
 from baseline import MODEL_ORACLE, MODEL_CNN, MODEL_IMAGE_SCRATCH, MODEL_REWARD_PREDICTION, MODEL_IMAGE_RECONSTRUCTION
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
 
 """
 @intro : the pseudocode of Actor-Critic Style
@@ -218,7 +216,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
 
         # if isinstance(observation, np.ndarray):
         #     obs = torch.tensor(observation, dtype=torch.float)
-
+        
         # observation - [N,1,64,64]
 
         # calculate
@@ -445,8 +443,8 @@ class MODEL_PPO(nn.Module):
 
                 # ACTOR
                 with torch.no_grad():
-                    self.buffer.observations.append(observation)                     # [64,64] / [4,]
-                    action, action_log_prob, _ = self.agent.actor(observation)   # [N,2], [N,1], _
+                    self.buffer.observations.append(observation)                    # [64,64] / [4,]
+                    action, action_log_prob, _ = self.agent.actor(observation)      # [N,2], [N,1], _
                 
                 # environment transform
                 observation, reward, done, _ = self.env.step(action) # [64,64] / [4,] , [1,], [1,]
@@ -465,19 +463,22 @@ class MODEL_PPO(nn.Module):
             # 
             self.buffer.rewards.append(episode_rewards) # [N,[num_timestep_per_episode]]
 
-        # Observations
-        self.buffer.observations = torch.tensor(self.buffer.observations, dtype=torch.float32)
+        # == Observations ==
+        #self.buffer.observations = torch.tensor(self.buffer.observations, dtype=torch.float32)
+        self.buffer.observations = torch.tensor(np.array(self.buffer.observations), dtype=torch.float32).detach()
         if self.is_oracle:
             self.buffer.observations = self.buffer.observations.view(self.count_timestep_per_batch,self.input_resolution) # [N,D]
         else:
             self.buffer.observations = self.buffer.observations.view(self.count_timestep_per_batch,self.input_channels,self.input_resolution,self.input_resolution) # [N,C,H,W]
         
-        # Actions
-        self.buffer.actions = torch.tensor(torch.stack(self.buffer.actions,dim=0), dtype=torch.float32)
+        # == Actions ==
+        #self.buffer.actions = torch.tensor(torch.stack(self.buffer.actions,dim=0), dtype=torch.float32)
+        self.buffer.actions = torch.stack(self.buffer.actions,dim=0).clone().detach().type(dtype=torch.float32)
         self.buffer.actions = self.buffer.actions.view(self.count_timestep_per_batch, self.action_dim) # [N, 2]
 
-        # Log_probs
-        self.buffer.log_probs = torch.tensor(torch.stack(self.buffer.log_probs,dim=0), dtype=torch.float32)
+        # == Log_Probs ==
+        #self.buffer.log_probs = torch.tensor(torch.stack(self.buffer.log_probs,dim=0), dtype=torch.float32)
+        self.buffer.log_probs = torch.stack(self.buffer.log_probs,dim=0).clone().detach().type(dtype=torch.float32)
         self.buffer.log_probs = self.buffer.log_probs.view(self.count_timestep_per_batch, 1) # [N, 1]
 
         # print(self.buffer.observations.shape) # [N, -] / [N,1,64,64]
