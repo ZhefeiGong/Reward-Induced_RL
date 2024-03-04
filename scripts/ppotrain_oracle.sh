@@ -1,8 +1,8 @@
 python ./ppo_train.py \
 --mode 'oracle' \
 --num_distractors 0 \
---wandb_project 'baseline' \
---wandb_exp 'oracle-run2' \
+--wandb_project 'baseline-gpu' \
+--wandb_exp 'oracle-run1' \
 --num_timestep_total 1000000 \
 --num_timestep_per_batch 2000 \
 --num_timestep_per_episode 40 \
@@ -23,6 +23,8 @@ python ./ppo_train.py \
 --output_size_value 1 \
 --reward_w_path '' \
 --reconstruction_w_path '' \
+--gpus_num 1 \
+--gpus_idx 7 \
 --is_use_wandb \
 
 # --is_visual_traj \

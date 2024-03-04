@@ -178,7 +178,7 @@ class MODEL_REWARD_PREDICTION(nn.Module):
         observation = observation.view(-1, self.input_channels, self.input_resolution, self.input_resolution)  # [N, 1, 64, 64]
 
         return self.encoder(observation)
-        
+    
     #@func : 
     def w_init(self):
         # init weights

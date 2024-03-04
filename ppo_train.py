@@ -2,6 +2,7 @@
 #@func   : 
 #@author : Zhefei Gong
 
+import os
 import gym
 import torch
 import wandb
@@ -21,6 +22,15 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #@func : 
 def train_ppo(args):
 
+    # GPUs
+    if args.gpus_num > 0 and torch.cuda.is_available() and args.gpus_idx < torch.cuda.device_count(): 
+        device = torch.device(f"cuda:{args.gpus_idx}")
+        print("[INFO] GPU is available.") 
+        print(f"[INFO] Current CUDA device : {device}")
+    else:
+        device = torch.device("cpu")
+        print("[INFO] GPU is not available, using CPU instead.")
+    
     # WANDB
     if args.is_use_wandb:
         wandb.init(project=args.wandb_project, 
@@ -71,8 +81,8 @@ def train_ppo(args):
 
     )
 
-    ppo_agent = MODEL_PPO(env=env, spec=_spec)
-    ppo_agent.w_init() # initialize the weights
+    ppo_agent = MODEL_PPO(env=env, spec=_spec, device=device).to(device)
+    ppo_agent.w_init() # initialize the weights - 
 
     # OPTIMIZER
     optimizer = torch.optim.Adam(ppo_agent.agent.parameters(), lr=learning_rate_ppo)
@@ -165,7 +175,9 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_dim', type=int, default=64, help="[NOTICE] ")
     parser.add_argument('--mlp_hidden_units',type=int, default=32, help="[NOTICE] ")
     parser.add_argument('--lstm_num_layers', type=int, default=1, help="[NOTICE] ")
-    parser.add_argument('--gpus', type=int, default=0, help="[NOTICE] ") # Not Supporting Multiple GPUs (GPUs = 1 or 0)
+
+    parser.add_argument('--gpus_num', type=int, default=0, help="[NOTICE] ") # Not Supporting Multiple GPUs (GPUs = 1 or 0)
+    parser.add_argument('--gpus_idx', type=int, default=0, help="[NOTICE] ") # Not Supporting Multiple GPUs (GPUs = 1 or 0)
     
     # DATA
     parser.add_argument('--resolution', type=int, default=64, help="[NOTICE] ")

@@ -1,10 +1,10 @@
 python ./ppo_train.py \
 --mode 'image_scratch' \
 --num_distractors 0 \
---wandb_project 'baseline' \
+--wandb_project 'baseline-gpu' \
 --wandb_exp 'image_scratch-run1' \
---num_timestep_total 50000 \
---num_timestep_per_batch 400 \
+--num_timestep_total 1000000 \
+--num_timestep_per_batch 2000 \
 --num_timestep_per_episode 40 \
 --num_update_per_batch 10 \
 --normalization_bias 1e-9 \
@@ -23,6 +23,8 @@ python ./ppo_train.py \
 --output_size_value 1 \
 --reward_w_path '' \
 --reconstruction_w_path '' \
+--gpus_num 1 \
+--gpus_idx 6 \
 --is_use_wandb \
 
 # --num_timestep_total 5000000 \

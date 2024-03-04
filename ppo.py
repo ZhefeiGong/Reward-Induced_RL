@@ -123,11 +123,13 @@ class MODEL_ACTOR_CRITIC(nn.Module):
 
         # cnn
         if self.mode == 'cnn':
+            self.is_finetune = True
             self.encoder = MODEL_CNN(input_resolution = self.input_resolution,
                                      input_channels = self.input_channels,
                                      latent_channels = self.cnn_latent_channels)
         # scratch
         elif self.mode == 'image_scratch':
+            self.is_finetune = True
             self.encoder = MODEL_IMAGE_SCRATCH(input_resolution = self.input_resolution,
                                                input_channels = self.input_channels,
                                                output_channels = self.output_channels)            
@@ -140,6 +142,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
                                                       input_channels = self.input_channels,
                                                       output_channels = self.output_channels,)
         elif self.mode == 'image_reconstruction_finetune':
+            self.is_finetune = True
             self.encoder = MODEL_IMAGE_RECONSTRUCTION(w_path = self.reconstruction_w_path, 
                                                       is_finetune = self.is_finetune,
                                                       input_resolution = self.input_resolution,
@@ -154,6 +157,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
                                                    input_channels = self.input_channels,
                                                    output_channels = self.output_channels)
         elif self.mode == 'reward_prediction_finetune':
+            self.is_finetune = True
             self.encoder = MODEL_REWARD_PREDICTION(w_path = self.reward_w_path, 
                                                    is_finetune = self.is_finetune,
                                                    input_resolution = self.input_resolution,
@@ -161,11 +165,10 @@ class MODEL_ACTOR_CRITIC(nn.Module):
                                                    output_channels = self.output_channels)
         # oracle
         else:
+            self.is_finetune = True
             self.encoder = MODEL_ORACLE(dim=observation_space.shape[0])
-        
-        # Weight Initialization
-        self.encoder.w_init()    
 
+        
         # POLICY <<-->> OUTPUT{[N,32]} 
         self.policy_net = nn.Sequential(
             nn.Linear(self.encoder.output_size, self.latent_size_net),  # 64 <<-->> 32 / 64(CNN)
@@ -188,11 +191,12 @@ class MODEL_ACTOR_CRITIC(nn.Module):
 
     #@func : 
     def w_init(self):
+
         # encoder
         self.encoder.w_init()
 
         # policy_net
-        for module in self.policy_net():
+        for module in self.policy_net:
             if isinstance(module, nn.Linear):
                 # Linear - fan_out
                 nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
@@ -200,7 +204,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
                     nn.init.constant_(module.bias, 0)  # bias
         
         # value_net
-        for module in self.value_net():
+        for module in self.value_net:
             if isinstance(module, nn.Linear):
                 # Linear - fan_out
                 nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
@@ -283,7 +287,7 @@ class ROLLOUT_BUFFER:
         self.RTGs = []          # [N,]
         self.At = []            # [N,]
 
-        self.rewards = []       # [N,[list]] * 
+        self.rewards = []       # [N,[list]] - CPU
     
     def clear(self):
 
@@ -293,7 +297,7 @@ class ROLLOUT_BUFFER:
         del self.RTGs          # [N,]
         del self.At            # [N,]
 
-        del self.rewards       # [N,[list]] * 
+        del self.rewards       # [N,[list]] - CPU
 
         self.__init__()
         
@@ -328,6 +332,7 @@ class MODEL_PPO(nn.Module):
     #@func : 
     def __init__(self, 
                  env,
+                 device,
                  spec
                  ):
         super(MODEL_PPO, self).__init__()
@@ -365,37 +370,24 @@ class MODEL_PPO(nn.Module):
         # INIT 
         self.agent = MODEL_ACTOR_CRITIC(observation_space=self.observation_space, 
                                         action_space=self.action_space,
-                                        spec=spec)
+                                        spec=spec) # in GPUs
 
-        self.buffer = ROLLOUT_BUFFER()
+        self.buffer = ROLLOUT_BUFFER() # part in GPUs
+
+        self.device = device # the devide number
     
     #@func : 
     def forward(self):
         pass
-
+    
     #@func : 
-    def w_init(self):
-        for module in self.modules():
-            if isinstance(module, nn.Conv2d):
-                # Conv2d - fan_in
-                nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)  # bias
-            elif isinstance(module, nn.ConvTranspose2d):
-                # ConvTranspose2d - fan_in
-                nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)  # bias
-            elif isinstance(module, nn.Linear):
-                # Linear - fan_out
-                nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)  # bias
-
+    def w_init(self): 
+        self.agent.w_init() # only need to initialize the agent
+    
     #@func : 
     def buffer_clear(self):
         self.buffer.clear()
-        
+    
     #@func : 
     def compute_RTGs(self):
         with torch.no_grad():
@@ -409,7 +401,8 @@ class MODEL_PPO(nn.Module):
             self.buffer.RTGs = torch.tensor(self.buffer.RTGs, dtype=torch.float32)
             self.buffer.RTGs = self.buffer.RTGs.view(self.count_timestep_per_batch, -1) #[N,]
             self.buffer.RTGs = (self.buffer.RTGs - self.buffer.RTGs.mean()) / (self.buffer.RTGs.std() + self.normalization_bias)
-        
+            self.buffer.RTGs = self.buffer.RTGs.to(self.device) # to GPU
+
         # print("[RTGs]",self.buffer.RTGs.shape) # [N,1]
 
     #@func : 
@@ -419,7 +412,8 @@ class MODEL_PPO(nn.Module):
             values = values.view(-1, 1) # [N, 1]
             self.buffer.At = self.buffer.RTGs - values
             self.buffer.At = (self.buffer.At - self.buffer.At.mean()) / (self.buffer.At.std() + self.normalization_bias)
-        
+            self.buffer.At = self.buffer.At.to(self.device) # to GPU
+
         # print("[AT]",self.buffer.At.shape) # [N,1]
 
     #@func : 
@@ -444,9 +438,14 @@ class MODEL_PPO(nn.Module):
                 # ACTOR
                 with torch.no_grad():
                     self.buffer.observations.append(observation)                    # [64,64] / [4,]
+                    # to device 
+                    if isinstance(observation, np.ndarray):
+                        observation = torch.tensor(observation, dtype=torch.float).to(self.device)
+                    # calculate
                     action, action_log_prob, _ = self.agent.actor(observation)      # [N,2], [N,1], _
                 
                 # environment transform
+                action, action_log_prob = action.cpu(), action_log_prob.cpu()
                 observation, reward, done, _ = self.env.step(action) # [64,64] / [4,] , [1,], [1,]
 
                 # EXPEND episode_rewards
@@ -481,9 +480,15 @@ class MODEL_PPO(nn.Module):
         self.buffer.log_probs = torch.stack(self.buffer.log_probs,dim=0).clone().detach().type(dtype=torch.float32)
         self.buffer.log_probs = self.buffer.log_probs.view(self.count_timestep_per_batch, 1) # [N, 1]
 
+        # TO GPU
+        self.buffer.observations = self.buffer.observations.to(self.device)
+        self.buffer.actions = self.buffer.actions.to(self.device)
+        self.buffer.log_probs = self.buffer.log_probs.to(self.device)
+
         # print(self.buffer.observations.shape) # [N, -] / [N,1,64,64]
         # print(self.buffer.actions.shape) # [N,2] 
         # print(self.buffer.log_probs.shape) # [N,1]
+
 
     #@func : 
     def update(self):
