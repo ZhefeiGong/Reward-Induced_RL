@@ -23,7 +23,8 @@ python ./ppo_train.py \
 --output_size_value 1 \
 --reward_w_path 'weights/fig3/rwd_xyxy/reward-pred_encoder_[sh-2]_[trj-40]_[cf-5]_[epo-500]_[size-100]-[rwd-agent_x-agent_y-target_x-target_y].pth' \
 --reconstruction_w_path '' \
---is_use_wandb \
+--is_visual_traj \
+# --is_use_wandb \
 
 # --num_timestep_total 5000000 \
 # --num_timestep_per_batch 2048 \

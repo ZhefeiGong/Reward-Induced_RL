@@ -34,7 +34,7 @@ def TEST_sprites_dataset():
     # print("states: ", traj.states[:,1,:])                   # 
 
     cv2.imwrite("tmp/test.png", img[0].transpose(1, 2, 0))
-
+    
     print(traj.images.shape)
 
     make_gif(imgs = traj.images, path = "tmp/test.gif", fps_default=5)

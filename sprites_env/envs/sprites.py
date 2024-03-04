@@ -143,7 +143,7 @@ class SpritesEnv(gym.Env):
             return 1. - np.sqrt(((target_pos - agent_pos) ** 2).sum()) / np.sqrt(2) # !!! More Close <<-->> More Value !!!
         else:
             return np.sqrt(((target_pos - agent_pos) ** 2).sum()) / np.sqrt(2) # 
-
+    
     def _render(self, trajectories, shapes):
         sprites = [self._shape_sprites[shape] for shape in shapes]
         return self._template_blender.create((trajectories * (self.resolution - 1)).astype(int), sprites)

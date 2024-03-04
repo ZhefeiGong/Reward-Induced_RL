@@ -105,7 +105,7 @@ class MODEL_ACTOR_CRITIC(nn.Module):
         self.output_size_policy = spec.output_size_policy                   # --> 64
         self.output_size_value = spec.output_size_value                     # --> 1
 
-        self.action_dim = action_space.shape[0]              # --> 2
+        self.action_dim = action_space.shape[0]                             # --> 2
 
         self.mode = spec.mode
 
@@ -280,7 +280,7 @@ class ROLLOUT_BUFFER:
     def __init__(self):
         
         self.actions = []       # [N,2]
-        self.observations = []  # [N,64,64]
+        self.observations = []  # [N,1,64,64]
         self.log_probs = []     # [N,2]
         self.RTGs = []          # [N,]
         self.At = []            # [N,]

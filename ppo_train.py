@@ -7,8 +7,10 @@ import torch
 import wandb
 from tqdm import tqdm
 import torch.nn as nn
+import numpy as np
 import argparse
 from general_utils import AttrDict
+from general_utils import make_gif
 from ppo import MODEL_PPO
 
 #@func : 
@@ -81,10 +83,17 @@ def train_ppo(args):
         
         # ACTOR
         with torch.no_grad():
+            # RUN
             ppo_agent.rollout()
             ppo_agent.compute_RTGs()
             ppo_agent.compute_advantage_estimate()
-            count_timestep_total += ppo_agent.count_timestep_per_batch        
+            count_timestep_total += ppo_agent.count_timestep_per_batch   
+            
+            # SHOW the Figs([N,Resolution,Resolution])  
+            if args.mode != 'oracle' and args.is_visual_traj is True:    
+                imgs = torch.squeeze(ppo_agent.buffer.observations[:num_timestep_per_episode,:,:,:],dim=1) # [N,1,R,R] <<-->> [N,R,R]
+                make_gif(imgs = np.array(imgs) * 255, path = "tmp/fig3/env.gif", fps_default=10)
+                # print('[SAVING]', count_timestep_total)
 
         # CRITIC
         with torch.enable_grad():
@@ -101,8 +110,8 @@ def train_ppo(args):
         avg_reward_per_batch = sum_rewards / ppo_agent.count_timestep_per_batch * num_timestep_per_episode
         avg_loss_per_batch = avg_loss_per_batch / num_update_per_batch
         pbar.update(1)
-        pbar.set_postfix({'reward': avg_reward_per_batch, 'loss': avg_loss_per_batch})
-
+        pbar.set_postfix({'reward': avg_reward_per_batch, 'loss': avg_loss_per_batch, 'save':(args.mode != 'oracle' and args.is_visual_traj is True)})
+        
         # WANDB
         if args.is_use_wandb:
             wandb.log({"reward": avg_reward_per_batch}, step=count_timestep_total)
@@ -187,6 +196,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--reward_w_path', type=str, default='', help="[NOTICE] ") 
     parser.add_argument('--reconstruction_w_path', type=str, default='', help="[NOTICE] ") 
+
+    parser.add_argument('--is_visual_traj', default=False, action='store_true', help="[NOTICE] ")
     
     # CHOSE
     parser.add_argument('--num_distractors', type=int, default=0, help="[NOTICE] ")

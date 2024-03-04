@@ -23,7 +23,8 @@ python ./ppo_train.py \
 --output_size_value 1 \
 --reward_w_path '' \
 --reconstruction_w_path '' \
---is_use_wandb \
+--is_visual_traj \
+# --is_use_wandb \
 
 # --num_timestep_total 5000000 \
 # --num_timestep_per_batch 2048 \

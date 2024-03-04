@@ -110,7 +110,6 @@ def sum_independent_dims(tensor: torch.Tensor) -> torch.Tensor:
         tensor = tensor.sum()
     return tensor
 
-
 #@func : 
 def set_random_seed(num):
     pass
