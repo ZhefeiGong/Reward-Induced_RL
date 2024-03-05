@@ -34,7 +34,7 @@ pip install -r requirements.txt
 
 ### 3.Implementation Tasks
 
-1. re-implement the reward-induced representation learning model. 
+1. re-implement the reward-induced representation learning model
 
 `MODEL` = `Encoder` + `MLPs` + `LSTM` + `rewards_heads(MLPs)`
 
