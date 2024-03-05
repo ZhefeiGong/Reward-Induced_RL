@@ -1,9 +1,9 @@
 python ./ppo_train.py \
 --mode 'cnn' \
---num_distractors 0 \
---wandb_project 'baseline-5M' \
+--num_distractors 1 \
+--wandb_project 'baseline-2M-1dtr' \
 --wandb_exp 'cnn-run1' \
---num_timestep_total 5000000 \
+--num_timestep_total 2000000 \
 --num_timestep_per_batch 4000 \
 --num_timestep_per_episode 40 \
 --num_update_per_batch 10 \
@@ -24,7 +24,7 @@ python ./ppo_train.py \
 --reward_w_path '' \
 --reconstruction_w_path '' \
 --gpus_num 1 \
---gpus_idx 7 \
+--gpus_idx 5 \
 --is_use_wandb \
 
 # --num_timestep_total 5000000 \

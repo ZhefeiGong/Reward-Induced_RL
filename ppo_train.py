@@ -130,7 +130,7 @@ def train_ppo(args):
             if count_timestep_total % (args.visual_interva_k * 1000) == 0:
                 if args.mode != 'oracle' and args.is_visual_traj is True : 
                     imgs = torch.squeeze(ppo_agent.buffer.observations[:num_timestep_per_episode,:,:,:].cpu(), dim=1) # [N,1,R,R] <<-->> [N,R,R]
-                    make_gif(imgs = np.array(imgs) * 255, path = f"tmp/fig3/{args.mode}_{count_timestep_total/1000}.gif", fps_default=10)
+                    make_gif(imgs = np.array(imgs) * 255, path = f"tmp/fig3_1dtr/{args.mode}_{count_timestep_total/1000}.gif", fps_default=10)
                     # print('[SAVING]', count_timestep_total)
 
         # CRITIC

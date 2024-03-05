@@ -1,8 +1,8 @@
 python ./ppo_train.py \
 --mode 'reward_prediction_finetune' \
---num_distractors 0 \
---wandb_project 'baseline-5M' \
---wandb_exp 'reward_prediction_finetune-run2-visual' \
+--num_distractors 1 \
+--wandb_project 'baseline-2M-1dtr' \
+--wandb_exp 'reward_prediction_finetune-run1' \
 --num_timestep_total 2000000 \
 --num_timestep_per_batch 4000 \
 --num_timestep_per_episode 40 \
@@ -21,12 +21,15 @@ python ./ppo_train.py \
 --output_channels 64 \
 --output_size_policy 64 \
 --output_size_value 1 \
---reward_w_path 'weights/fig3/rwd_xyxy_500/reward-pred_encoder_[sh-2]_[trj-40]_[cf-5]_[epo-500]_[size-100]-[rwd-agent_x-agent_y-target_x-target_y].pth' \
+--reward_w_path 'weights/fig3/rwd_xyxy_1dtr_500/reward-pred_encoder_[sh-3]_[trj-40]_[cf-5]_[epo-500]_[size-100]-[rwd-agent_x-agent_y-target_x-target_y].pth' \
 --reconstruction_w_path '' \
 --gpus_num 1 \
---gpus_idx 5 \
+--gpus_idx 2 \
 --is_visual_traj \
 --is_use_wandb \
+
+
+# --reward_w_path 'weights/fig3/rwd_xyxy_1dtr_500/reward-pred_encoder_[sh-3]_[trj-40]_[cf-5]_[epo-500]_[size-100]-[rwd-agent_x-agent_y-target_x-target_y].pth' \
 
 # --reward_w_path 'weights/fig3/rwd_xyxy_100/reward-pred_encoder_[sh-2]_[trj-40]_[cf-5]_[epo-100]_[size-100]-[rwd-agent_x-agent_y-target_x-target_y].pth' \
 # --reward_w_path 'weights/fig3/rwd_xyxy_200/reward-pred_encoder_[sh-2]_[trj-40]_[cf-5]_[epo-200]_[size-100]-[rwd-agent_x-agent_y-target_x-target_y].pth' \

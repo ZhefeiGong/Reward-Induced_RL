@@ -1,9 +1,9 @@
 python ./ppo_train.py \
 --mode 'image_reconstruction' \
---num_distractors 0 \
---wandb_project 'baseline-5M' \
+--num_distractors 1 \
+--wandb_project 'baseline-2M-1dtr' \
 --wandb_exp 'image_reconstruction-run1' \
---num_timestep_total 5000000 \
+--num_timestep_total 2000000 \
 --num_timestep_per_batch 4000 \
 --num_timestep_per_episode 40 \
 --num_update_per_batch 10 \
@@ -24,7 +24,7 @@ python ./ppo_train.py \
 --reward_w_path '' \
 --reconstruction_w_path './weights/fig3/rec/image-rec_encoder_[sh-2]_[trj-40]_[epo-200]_[size-100]-[rwd-vertical_position].pth' \
 --gpus_num 1 \
---gpus_idx 5 \
+--gpus_idx 6 \
 --is_use_wandb \
 
 
