@@ -127,10 +127,11 @@ def train_ppo(args):
             count_timestep_total += ppo_agent.count_timestep_per_batch   
             
             # SHOW the Figs([N,Resolution,Resolution])  
-            if args.mode != 'oracle' and args.is_visual_traj is True:    
-                imgs = torch.squeeze(ppo_agent.buffer.observations[:num_timestep_per_episode,:,:,:],dim=1) # [N,1,R,R] <<-->> [N,R,R]
-                make_gif(imgs = np.array(imgs) * 255, path = f"tmp/fig3/{args.mode}.gif", fps_default=10)
-                # print('[SAVING]', count_timestep_total)
+            if count_timestep_total % (args.visual_interva_k * 1000) == 0:
+                if args.mode != 'oracle' and args.is_visual_traj is True : 
+                    imgs = torch.squeeze(ppo_agent.buffer.observations[:num_timestep_per_episode,:,:,:].cpu(), dim=1) # [N,1,R,R] <<-->> [N,R,R]
+                    make_gif(imgs = np.array(imgs) * 255, path = f"tmp/fig3/{args.mode}_{count_timestep_total/1000}.gif", fps_default=10)
+                    # print('[SAVING]', count_timestep_total)
 
         # CRITIC
         with torch.enable_grad():
@@ -240,6 +241,8 @@ if __name__ == "__main__":
     parser.add_argument('--reconstruction_w_path', type=str, default='', help="[NOTICE] ") 
 
     parser.add_argument('--is_visual_traj', default=False, action='store_true', help="[NOTICE] ")
+
+    parser.add_argument('--visual_interva_k', type=int, default=80, help="[NOTICE] ") 
     
     # CHOSE
     parser.add_argument('--num_distractors', type=int, default=0, help="[NOTICE] ")
