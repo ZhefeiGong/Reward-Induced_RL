@@ -1,6 +1,7 @@
 
 
 # IGNORE
+.DS_Store
+
 /wandb
 /__pycache__
-.DS_Store
