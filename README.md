@@ -7,9 +7,8 @@
 
 * Agent(●) Following Target(■) RL task
 
-    * 0 distractor(▲)
+    * 0 distractor(▲) |  1 distractor(▲)
     <img src="src/reward_prediction_finetune_2000.0.gif" width="100">
-    * 1 distractor(▲)
     <img src="src/reward_prediction_finetune_1840.0.gif" width="100">
 
 * introduction
