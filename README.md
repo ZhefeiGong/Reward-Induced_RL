@@ -35,16 +35,11 @@ pip install -r requirements.txt
 ### 3.Implementation Tasks
 
 1. re-implement the reward-induced representation learning model. 
+`MODEL` = `Encoder` + `MLPs` + `LSTM` + `rewards_heads(MLPs)`
 
-```
-MODEL = Encoder + MLPs + LSTM + rewards_heads(MLPs)
-```
 
 2. re-plicate the experiment to show the representation ability of model
-
-```
-EXP = Encoder(reward-induced) + Detached Decoder
-```
+`EXP` = `Encoder(reward-induced)` + `Detached Decoder`
 <img src="src/fig2.png" width="800">
 
 3. implement [PPO](https://spinningup.openai.com/en/latest/algorithms/ppo.html) to finished the downstream tas (agent following target) with reward-induced representation
