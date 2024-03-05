@@ -5,16 +5,25 @@
 
 ### 1.OVERVIEW
 
+* Agent(●) Following Target(■) RL task
 
+    * 0 distractor(▲)
+    <img src="src/reward_prediction_finetune_2000.0.gif" width="100">
+    * 1 distractor(▲)
+    <img src="src/reward_prediction_finetune_1840.0.gif" width="100">
 
+* introduction
+<img src="src/reward-induce-intro.png" width="700">
+
+* reward-induced representation model
+<img src="src/reward-induce-model.png" width="800">
 
 ### 2.Get Start
 
 * initialize a virtual environment
 ```
-conda create --name env python=3.8
+conda create --name myenv python=3.8
 conda activate myenv
-
 ```
 * configure environment dependencies
 ```
@@ -35,13 +44,17 @@ MODEL = Encoder + MLPs + LSTM + rewards_heads(MLPs)
 ```
 EXP = Encoder(reward-induced) + Detached Decoder
 ```
+<img src="src/fig2.png" width="800">
 
 3. implement [PPO](https://spinningup.openai.com/en/latest/algorithms/ppo.html) to finished the downstream tas (agent following target) with reward-induced representation
-
+<img src="src/PPO-clip_code.png" width="800">
 
 4. build several representation model as baselines to train downstream task with PPO (`cnn`|`image-scratch`|`image-reconstruction`|`image-reconstruction-finetune`|`reward-prediction`|`reward-prediction-fintune`|`oracle`)
 
 5. train all of the above representation models and see the better performance of reward-induced model
+<img src="src/0_distractor.png" width="7500">
+<img src="src/1_distractor.png" width="7500">
+<img src="src/rwd_pre_train.png" width="7500">
 
 
 ### 4. Files Summary

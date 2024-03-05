@@ -13,10 +13,10 @@
 
 * [x] If your implementation is working, (1) **the image-based agent** with pre-training should be able to follow the target shape with **up to one distractor**, and (2) it should learn faster than the **image-based agent** trained from scratch (but likely slower than the oracle).
 
-
-![[Implementation-Task.png]]
+<img src="src/Implementation-Task.png" width="700">
 In complex environments we need to learn **representations** that focus on modeling **the important aspects of the environment**
 We propose to use **task information** to guide representations as to which parts of the environment are important to model. 
+
 * Left: 
 	* We pre-train **a representation** by **inferring reward values for multiple tasks from a shared representation of the high-dimensional input**, 
 	* encouraging it to focus on parts of the environment **that are important for solving the training tasks**,
@@ -164,29 +164,40 @@ For **downstream RL experiments** we compare to the following baselines :
 ✨
 * For two simple rewards indicate that the reward-induced representation indeed **only captures information** about the input that **are useful for inferring reward**
 	* As the decoder is not able to infer the position of the object along the axis that has no influence on the reward used for training the representation.	
-	📊
-	![[reward-induce_2.png]]
-	Detached decodings of reward-induced representations. 
+	  📊
+	
+	  <img src="src/reward-induce_2.png" width="700">Detached decodings of reward-induced representations. 
+	
 	* Top: Ground truth sequence. 
+	
 	* Middle: Decoding of representation learned with reward proportional to the vertical coordinate. 
+	
 	* Bottom: Same, but with reward proportional to horizontal coordinate. 
 	Representations retain **information about the position that influences the reward**, but **no information about the other coordinate**, which **leads to blurry predictions on the latter axis**.
 
 ✨
 * To also quantify how **much** of **the important information** is captured **in reward-induced representations** compared to **conventional**, **image-based representations**. 
 	* We compare **values for different numbers of visual distractors** in the scene and find that **reward-induced representations** are **better able to capture the important information** in the scene across all scenarios.
+	
 	* Further, they prove **fairly robust to increased noise**
+	
 	* Representation learned via image prediction objectives on the other hand 
 		are **not able to capture all important information**, leading to **worse regression accuracy**, 
 		because **during training** they **receive no guidance** on what is important to model and what can be ignored.
-	📊
-	![[reward-induce_t1.png]]
-	Reward regression MSE values for different representations with no, one and two distractors.
+		📊
+	
+		<img src="src/reward-induce_t1.png" width="700">
+		Reward regression MSE values for different representations with no, one and two distractors.
+		
 	* A-X denotes reward proportional to the **agent’s horizontal position**
+	
 	* T-Y indicates reward proportional to the **target’s vertical position**
-	The reward-induced representation 
+	  The reward-induced representation 
+	
 	* enables more accurate reward regression 
+	
 	* is also fairly robust to increasing amounts of noise 
+	
 	* while the image prediction based representation fails to capture information necessary to regress all rewards accurately.
 
 
@@ -194,8 +205,10 @@ For **downstream RL experiments** we compare to the following baselines :
 🌕Reward-Induced Representations for Reinforcement Learning
 
 ✨
-![[reward-induce_3.png]]
+
+<img src="src/reward-induce_3.png" width="700">
 We compare the speed of training and convergence across all the baselines discussed above. 
+
 * Oracle baseline acts over the most compact state representation containing shape positions and consequently performs the best. 
 * reward-prediction finetune comes second both in speed and final convergence for environments with zero and one distractor. 
 * cnn learns slower than our method, but converges to similar values in the end. 
@@ -204,9 +217,10 @@ This shows that **reward prediction** leads to **a good encoder initialization f
 It is **much better than image_scratch** which uses a similarly sized encoder as our method. 
 Note that cnn performs better than image_scratch because of **its small sized CNN network** suitable for RL.
 
-
 ✨
-![[reward-induce_4.png]]
+
+<img src="src/reward-induce_4.png" width="700">
+
 * It shows qualitative rollouts of reward-prediction fine-tune upon convergence on the follow task with **0** and **1** distractor.
 * The agent (circle) successfully follows the target (square) even in the presence of distractors (triangles).
 
@@ -223,15 +237,16 @@ While we can show that our method is more robust than baselines in the case of a
 
 
 ##### 6.Architecture - the reward prediction model
-![[reward-induce_5.png]]
+<img src="src/reward-induce_5.png" width="700">
+
 * All MLPs have **3 layers with 32 hidden units**. 
 * The image encoder uses **strided convolutions** to reduce the image resolution by a factor of 2 in every layer, until the spatial resolution is 1x1 (i.e. the number of layers is determined by the input resolution). 
 * The number of channels gets doubled in every layer starting with 4 channels in the first layer. 
 * The final 1x1 feature vector gets mapped to **a 64-dimensional observation space** using a linear layer. 
 * The **encoder** (**green**) is transferred to the RL policy, where it is used to encode the image inputs.
 * LSTM
-	* 🌞	![[LSTM.png]]
-	* 🌞		![[lstm_frame.png]]
+	* 🌞	<img src="src/LSTM.png" width="700">
+	* 🌞		<img src="src/lstm_frame.png" width="700">
 
 ##### 7.Actor-Critic
 1. DQN - CRITIC(like)
@@ -271,7 +286,7 @@ While we can show that our method is more robust than baselines in the case of a
 				$w\leftarrow w+\alpha_w \delta_t\nabla_wQ_w(s,a)$
 			5. Update $a\leftarrow a'$ and $s\leftarrow s'$
 		* Two learning rates, $\alpha_{\theta}$ and$\alpha_w$, are predefined for policy and value function parameter updates respectively.
-		* QAC		![[QAC.png]]
+		* QAC		<img src="src/QAC.png" width="700">
 		
 	* Advantage Actor Critic - **A2C** - from [Chris Yoon](https://towardsdatascience.com/understanding-actor-critic-methods-931b97b6df3f)
 		* There're two function approximations
@@ -285,7 +300,7 @@ While we can show that our method is more robust than baselines in the case of a
 			* The update equation : 
 				$\nabla_{\theta}J(\theta)$ ~ $\sum_{t=0}^{T-1}\nabla_{\theta}log\pi_{\theta}(a_t|s_t)(r_{t+1}+\gamma V_v(s_{t+1})-V_v(s_t))$
 				$\nabla_{\theta}J(\theta)$ = $\sum_{t=0}^{T-1}\nabla_{\theta}log\pi_{\theta}(a_t|s_t)A(s_t,a_t)$
-				
+		
 	* Asynchronous Advantage Actor-Critic (A3C) - from [Lil'Log](https://lilianweng.github.io/posts/2018-04-08-policy-gradient/#dpg)
 		* In A3C, the critics learn the value function while multiple actors are **trained in parallel** and get synced with global parameters from time to time. Hence, A3C is designed to work well for parallel training.
 		* Let’s use the state-value function as an example. 
@@ -303,12 +318,12 @@ While we can show that our method is more robust than baselines in the case of a
 					2. Update $t+t+1$ and $T=T+1$
 				5. Initialize the variable that holds the return estimation
 					$$
-R=
-\begin{cases}
-0 & if\ s_t\ is\ TERMINAL\\
-V_{w'}(s_t) & otherwise
-\end{cases}
-						$$
+					R=
+					\begin{cases}
+					0 & if\ s_t\ is\ TERMINAL\\
+					V_{w'}(s_t) & otherwise
+					\end{cases}
+					$$
 				6. For $i=t-1,...,t\_start$
 					1. $R\leftarrow \gamma R+R_i$; here $R$ is a MC measure of $G_i$
 					2. Accumulate
@@ -317,7 +332,7 @@ V_{w'}(s_t) & otherwise
 						2. Accumulate gradients w.r.t.
 							$w'$ : $dw \leftarrow dw + 2(R-V_{w'}(s_i))\nabla_{w'}(R-V_{w'}(s_i))$
 				7. Update asynchronously $\theta$ using $d\theta$, and $w$ using $dw$
-		A3C enables the parallelism in multiple agent training. The gradient accumulation step (6.2) can be considered as a parallelized reformation of minibatch-based stochastic gradient update: the values of $w$ or $\theta$ get corrected by a little bit in the direction of each training thread independently.
+				A3C enables the parallelism in multiple agent training. The gradient accumulation step (6.2) can be considered as a parallelized reformation of minibatch-based stochastic gradient update: the values of $w$ or $\theta$ get corrected by a little bit in the direction of each training thread independently.
 
 ##### 8.PPO
 
@@ -329,7 +344,7 @@ V_{w'}(s_t) & otherwise
 	
 * Adaptive KL Penalty Coefficient
 	
-* Algorithm : ![[PPO_paper_code.png]]
+* Algorithm : <img src="src/PPO_paper_code.png" width="700">
 
 
 🌍From [zhihu](https://zhuanlan.zhihu.com/p/468828804) <<-->> **PPO-Penalty**
@@ -360,28 +375,37 @@ V_{w'}(s_t) & otherwise
 * 🌕TRPO
 	* BG
 		* TRPO updates policies by taking the largest step possible to improve performance, while satisfying a special constraint on how close the new and old policies are allowed to be. The constraint is expressed in terms of [KL-Divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence), a measure of (something like, but not exactly) distance between probability distributions.
+		
 	* Facts
 		* on-policy algorithm
 		* useful for environments with either discrete or continuous action spaces
+		
 	* Equations
-		![[TRPO_1.png]]![[TRPO_2.png]]![[TRPO_3.png]]
+		<img src="src/TRPO_1.png" width="700">
+		
+		<img src="src/TRPO_2.png" width="700">
+		
+		<img src="src/TRPO_3.png" width="700">
+		
 		* But $H^{-1}$ is the second-order derivative and its inverse, a very expensive operation.
+		
 	* Pseudocode
-		![[TRPO_code.png]]
+		<img src="src/TRPO_code.png" width="700">
+	
 * 🌕PPO
 	* BG
 		PPO is motivated by the same question as TRPO: how can we take the biggest possible improvement step on a policy using the data we currently have, without stepping so far that we accidentally cause performance collapse? Where TRPO tries to solve this problem with a complex second-order method, PPO is a family of first-order methods that use a few other tricks to keep new policies close to old. PPO methods are significantly simpler to implement, and empirically seem to perform at least as well as TRPO.
 		There are two primary variants of PPO: PPO-Penalty and PPO-Clip.
-		* ***PPO-Penalty** approximately solves a KL-constrained update like TRPO, but penalizes the KL-divergence in the objective function instead of making it a hard constraint, and automatically adjusts the penalty coefficient over the course of training so that it’s scaled appropriately.
-		* ***PPO-Clip** doesn’t have a KL-divergence term in the objective and doesn’t have a constraint at all. Instead relies on specialized clipping in the objective function to remove incentives for the new policy to get far from the old policy.
+		* **PPO-Penalty** approximately solves a KL-constrained update like TRPO, but penalizes the KL-divergence in the objective function instead of making it a hard constraint, and automatically adjusts the penalty coefficient over the course of training so that it’s scaled appropriately.
+		* **PPO-Clip** doesn’t have a KL-divergence term in the objective and doesn’t have a constraint at all. Instead relies on specialized clipping in the objective function to remove incentives for the new policy to get far from the old policy.
 	* Facts
 		- PPO is an on-policy algorithm.
 		- PPO can be used for environments with either discrete or continuous action spaces.
 	- Equations  - PPO-Clip
-		- ![[PPO-clip_1.png]]
-		- ![[PPO-clip_2.png]]
+		- <img src="src/PPO-clip_1.png" width="700">
+		- <img src="src/PPO-clip_2.png" width="700">
 	- 🌅Pseudocode
-		![[PPO-clip_code.png]]
+		<img src="src/PPO-clip_code.png" width="700">
 
 
 🌍 From [Jonathan Hui](https://jonathan-hui.medium.com/rl-proximal-policy-optimization-ppo-explained-77f014ec3f12)
@@ -394,11 +418,17 @@ V_{w'}(s_t) & otherwise
 	* Experimental results prove that this kind of balance achieves the best performance with the most simplicity.
 * Method
 	* PPO with KL Penalty
-		![[PPO_kl_prov.png]]
-		![[PPO_kl.png]]
-	* PPO with Clipped Objective	![[PPO_cl_1.png]]![[PPO_cl_2.png]]![[PPO_cl_3.png]]
+		<img src="src/PPO_kl_prov.png" width="700">
+		![[PPO_kl.png" width="700">
+	* PPO with Clipped Objective	
 		
-		![[PPO_cl.png]]
+		<img src="src/PPO_cl_1.png" width="700">
+		
+		<img src="src/PPO_cl_2.png" width="700">
+		
+		<img src="src/PPO_cl_3.png" width="700">
+		
+		<img src="src/PPO_cl.png" width="700">
 
 
 ##### 9.TEMP
@@ -411,11 +441,11 @@ V_{w'}(s_t) & otherwise
 	\pi(a|x)=\pi'(a|z)p_{\phi}(z|x)
 	$$
 
-* 🌞![[PPO-clip_code.png]]
-
+* 🌞<img src="src/PPO-clip_code.png" width="700">
 
 🌕Distribution
 在PyTorch中实现Actor-Critic模型时，选择合适的分布类型对于模型的性能至关重要，特别是当处理的是连续动作空间。根据动作空间的性质（连续或离散），常用的分布类型有：
+
 * 🔥连续动作空间
 	对于连续动作空间，通常使用以下两种分布：
 	1. **正态分布（高斯分布）**：
