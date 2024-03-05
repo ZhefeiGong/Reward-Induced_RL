@@ -3,8 +3,8 @@ python ./ppo_train.py \
 --num_distractors 1 \
 --wandb_project 'baseline-2M-1dtr' \
 --wandb_exp 'oracle-run1' \
---num_timestep_total 2000000 \
---num_timestep_per_batch 4000 \
+--num_timestep_total 1000000 \
+--num_timestep_per_batch 2000 \
 --num_timestep_per_episode 40 \
 --num_update_per_batch 10 \
 --normalization_bias 1e-9 \
@@ -23,7 +23,7 @@ python ./ppo_train.py \
 --output_size_value 1 \
 --reward_w_path '' \
 --reconstruction_w_path '' \
---gpus_num 1 \
+--gpus_num 0 \
 --gpus_idx 5 \
 --is_use_wandb \
 

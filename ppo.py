@@ -64,13 +64,13 @@ class DiagGaussianDistribution:
         self.distribution = None
 
     def proba_distribution_net(self, latent_dim, log_std_init):
-        mean_actions = nn.Linear(latent_dim, self.action_dim) # Mean For Distribution
-        log_std = nn.Parameter(torch.ones(self.action_dim) * log_std_init, requires_grad=True) # Standard For Distribution
+        mean_actions = nn.Linear(latent_dim, self.action_dim) # Mean For Distribution [2,]
+        log_std = nn.Parameter(torch.ones(self.action_dim) * log_std_init, requires_grad=True) # Standard For Distribution [2,]
         return mean_actions, log_std
     
     def proba_distribution(self, mean_actions, log_std):
         action_std = torch.ones_like(mean_actions) * log_std.exp()
-        self.distribution = Normal(mean_actions, action_std)
+        self.distribution = Normal(mean_actions, action_std) # [N,2]
         return self
 
     def log_prob(self, actions) -> torch.tensor:
@@ -498,7 +498,10 @@ class MODEL_PPO(nn.Module):
 
         values, actions_log_probs, dist_entropy = self.agent.critic(self.buffer.observations, self.buffer.actions)        
         values = values.view(-1,1) # [N,1]
-
+        
+        # if torch.equal(actions_log_probs, self.buffer.log_probs):
+        #     print('EQUAL')
+        
         ratios = torch.exp(actions_log_probs - self.buffer.log_probs) # [N,1] - [N,1] <<-->> \pi_{\theta} / \pi_{\theta_{old}}
         ratios = ratios.view(-1,1) # [N,1]
         

@@ -1,13 +1,17 @@
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
 import cv2
 from general_utils import make_image_seq_strip
 from sprites_datagen.rewards import *
 import numpy as np
-import cv2
 
 from general_utils import AttrDict, make_gif
 from sprites_datagen.moving_sprites import DistractorTemplateMovingSpritesGenerator,TemplateMovingSpritesGenerator
 from sprites_env.envs.sprites import SpritesEnv
-
 
 #@func : test the dataset of sprites
 def TEST_sprites_dataset():
