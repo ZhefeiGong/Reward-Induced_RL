@@ -44,14 +44,14 @@ pip install -r requirements.txt
 
 <img src="src/fig2.png" width="800">
 
-3. implement [PPO](https://spinningup.openai.com/en/latest/algorithms/ppo.html) to finished the downstream tas (agent following target) with reward-induced representation
+3. implement [PPO](https://spinningup.openai.com/en/latest/algorithms/ppo.html) to finished the downstream task (agent following target) with reward-induced representation
 <img src="src/PPO-clip_code.png" width="800">
 
-4. build several representation model as baselines to train downstream task with PPO 
+4. build several representation models as baselines to train downstream task with PPO 
 
 (`cnn`|`image-scratch`|`image-reconstruction`|`image-reconstruction-finetune`|`reward-prediction`|`reward-prediction-fintune`|`oracle`)
 
-5. train all of the above representation models and see the better performance of reward-induced model
+5. train all of the above representation models and verify the better performance of reward-induced model
 <img src="src/0_distractor.png" width="7500">
 <img src="src/1_distractor.png" width="7500">
 <img src="src/rwd_pre_train.png" width="7500">
@@ -59,8 +59,9 @@ pip install -r requirements.txt
 
 ### 4. Files Summary
 
-* `/presentation` : the presentation slides of the implementation
+* `/presentation` : the presentation slides of the implementation task
 * `/re_implement_paper` : the notes about the paper 
+
 
 * `/scripts` : the shell files to run the tasks
 * `/sprites_datagen` : the dataset
@@ -69,12 +70,14 @@ pip install -r requirements.txt
 * `/tmp` : the visualization results during training process
 * `/weights` : the weights of models
 
+
 * `baseline.py` : the baseline models for final training
-* `general_utils.py` : general tools function
+* `general_utils.py` : general tool function
 * `model.py` : the pre-trained representation learning models
 * `ppo_train.py` : train the whole task with PPO
 * `ppo.py` : PPO implementation
 * `pre_train.py` : pre-train the representation learning models
+
 
 * `README.md` : the project info
 * `requirement.txt` : environmental dependencies
@@ -95,4 +98,4 @@ pip install -r requirements.txt
     * `ppotrain_reward_pred_finetune.sh`
     * `ppotrain_reward_pred.sh`
 
-2. change the parameters in each shell files like whether using gpus(`gpus_num`) or whether using wandb to record(`is_use_wandb`) 
+2. change the parameters in each shell file like whether using gpus(`gpus_num`) or whether using wandb to record(`is_use_wandb`) 
