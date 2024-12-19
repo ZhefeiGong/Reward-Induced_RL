@@ -3,7 +3,7 @@
  The implementation code of [paper](https://arxiv.org/abs/2204.11827), based on the starter [repo](https://github.com/kpertsch/clvr_impl_starter) provided by [CLVR](https://www.clvrai.com/).
 
 
-### 1.OVERVIEW
+### 1. OVERVIEW
 
 * Agent(●) Following Target(■) RL task
 
@@ -19,7 +19,7 @@
 * reward-induced representation model
 <img src="src/reward-induce-model.png" width="800">
 
-### 2.Get Start
+### 2. Get Start
 
 * initialize a virtual environment
 ```
@@ -32,7 +32,7 @@ pip install -r requirements.txt
 ```
 
 
-### 3.Implementation Tasks
+### 3. Implementation Tasks
 
 1. re-implement the reward-induced representation learning model
 
